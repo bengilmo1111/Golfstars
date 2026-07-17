@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#8fd6ff" />
+  <title>Golf Stars</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%9B%B3%3C/text%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- Canvas playfield (behind menus) -->
+    <canvas id="game"></canvas>
+
+    <!-- In-game HUD -->
+    <div id="hud">
+      <div class="hud-item"><span class="hud-label">SCORE</span><span id="hud-score">0</span></div>
+      <div class="hud-item"><span class="hud-label" id="hud-level">Range</span></div>
+      <div class="hud-item"><span class="hud-label">SHOTS</span><span id="hud-shots">0</span></div>
+      <button id="btn-mute" class="mute">🔊</button>
+      <button id="btn-quit" class="quit">✕</button>
+    </div>
+
+    <!-- Title -->
+    <section id="screen-title" class="screen active">
+      <div class="panel">
+        <h1 class="logo">GOLF<span>STARS</span></h1>
+        <p class="tag">Smash the silliest targets on the range!</p>
+        <button id="btn-play" class="big-btn">▶ PLAY</button>
+        <button id="btn-leaderboard" class="ghost-btn">🏆 Leaderboard</button>
+      </div>
+    </section>
+
+    <!-- Character select -->
+    <section id="screen-charselect" class="screen">
+      <div class="panel">
+        <h2>Pick your player</h2>
+        <div id="char-list" class="grid"></div>
+        <div class="row">
+          <button data-back="title" class="ghost-btn">Back</button>
+          <button id="btn-char-next" class="big-btn">Next ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Garage (balls + clubs) -->
+    <section id="screen-garage" class="screen">
+      <div class="panel">
+        <h2>Your gear</h2>
+        <p class="sub">Career score: <b id="career-score">0</b> — play to unlock more!</p>
+        <h3>Balls</h3>
+        <div id="ball-list" class="chips"></div>
+        <h3>Clubs</h3>
+        <div id="club-list" class="chips"></div>
+        <div class="row">
+          <button data-back="charselect" class="ghost-btn">Back</button>
+          <button id="btn-garage-next" class="big-btn">To the range ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Level select -->
+    <section id="screen-levelselect" class="screen">
+      <div class="panel">
+        <h2>Choose a range</h2>
+        <div id="level-list" class="grid"></div>
+        <button data-back="garage" class="ghost-btn">Back</button>
+      </div>
+    </section>
+
+    <!-- Results -->
+    <section id="screen-results" class="screen">
+      <div class="panel">
+        <h2>Round over!</h2>
+        <p class="sub" id="result-level"></p>
+        <div class="score-big"><span id="result-score">0</span> pts</div>
+        <p class="sub">Best: <b id="result-best">0</b> <span id="result-bestflag" class="flag">NEW BEST! ⭐</span></p>
+        <ul id="result-shots" class="shots"></ul>
+        <div id="result-unlock-wrap"><div id="result-unlocks"></div></div>
+        <div class="row">
+          <button id="btn-retry" class="ghost-btn">↺ Retry</button>
+          <button id="btn-menu" class="ghost-btn">Ranges</button>
+          <button id="btn-next" class="big-btn">Next ▶</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- Leaderboard -->
+    <section id="screen-leaderboard" class="screen">
+      <div class="panel">
+        <h2>🏆 Leaderboard</h2>
+        <ul id="board-list" class="board"></ul>
+        <p class="sub">Career: <b id="board-career">0</b> · <span id="board-unlocks"></span></p>
+        <button data-back="title" class="big-btn">Back</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- Core logic (environment-agnostic) -->
+  <script src="js/core/characters.js"></script>
+  <script src="js/core/props.js"></script>
+  <script src="js/core/levels.js"></script>
+  <script src="js/core/physics.js"></script>
+  <script src="js/core/scoring.js"></script>
+  <script src="js/core/unlocks.js"></script>
+  <script src="js/core/storage.js"></script>
+  <!-- Browser glue -->
+  <script src="js/audio.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/game.js"></script>
+</body>
+</html>

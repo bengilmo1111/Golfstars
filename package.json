@@ -1,0 +1,16 @@
+{
+  "name": "golf-stars",
+  "version": "1.0.0",
+  "description": "A silly, mobile-first driving-range golf game for kids. HTML5 Canvas, no build step, no backend.",
+  "private": true,
+  "scripts": {
+    "test": "node --test \"test/unit/*.test.js\"",
+    "test:e2e": "node test/e2e/smoke.mjs",
+    "test:all": "npm test && npm run test:e2e",
+    "serve": "node scripts/serve.js"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "playwright": "^1.61.1"
+  }
+}

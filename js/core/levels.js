@@ -1,0 +1,113 @@
+/**
+ * Levels — each scene's downrange length, shot count, ground theme, and prop
+ * layout. Props are placed at world x (downrange). Tee sits at x = TEE_X.
+ */
+(function (global) {
+  'use strict';
+
+  const TEE_X = 120;
+  const GROUND_Y = 0; // world ground line (height above ground is negative y going up)
+
+  const LEVELS = [
+    {
+      id: 'sunny-range',
+      name: 'Sunny Range',
+      shots: 5,
+      length: 2600, // downrange world length
+      sky: ['#8fd6ff', '#d7f2ff'],
+      ground: '#6fca5a',
+      props: [
+        { type: 'buckets', x: 520 },
+        { type: 'cartcreature', x: 780 },
+        { type: 'golfcart', x: 820 },
+        { type: 'scarecrow', x: 1150 },
+        { type: 'trampoline', x: 1400 },
+        { type: 'sprinkler', x: 1650 },
+        { type: 'portaloo', x: 1950 },
+        { type: 'picnic', x: 2300 }
+      ]
+    },
+    {
+      id: 'sunset-hills',
+      name: 'Sunset Hills',
+      shots: 5,
+      length: 3000,
+      sky: ['#ffb36b', '#ffe0a3'],
+      ground: '#57b968',
+      props: [
+        { type: 'scarecrow', x: 500 },
+        { type: 'buckets', x: 700 },
+        { type: 'trampoline', x: 900 },
+        { type: 'cartcreature', x: 1200 },
+        { type: 'golfcart', x: 1250 },
+        { type: 'sprinkler', x: 1550 },
+        { type: 'picnic', x: 1850 },
+        { type: 'portaloo', x: 2200 },
+        { type: 'scarecrow', x: 2500 },
+        { type: 'cartcreature', x: 2750 }
+      ]
+    },
+    {
+      id: 'chaos-carnival',
+      name: 'Chaos Carnival',
+      shots: 6,
+      length: 3400,
+      sky: ['#b48cff', '#ffd0f0'],
+      ground: '#4fbf8a',
+      props: [
+        { type: 'trampoline', x: 460 },
+        { type: 'portaloo', x: 620 },
+        { type: 'buckets', x: 850 },
+        { type: 'sprinkler', x: 1050 },
+        { type: 'trampoline', x: 1300 },
+        { type: 'cartcreature', x: 1550 },
+        { type: 'golfcart', x: 1600 },
+        { type: 'scarecrow', x: 1900 },
+        { type: 'picnic', x: 2200 },
+        { type: 'portaloo', x: 2550 },
+        { type: 'trampoline', x: 2800 },
+        { type: 'picnic', x: 3050 }
+      ]
+    },
+    {
+      id: 'moonlight-madness',
+      name: 'Moonlight Madness',
+      shots: 6,
+      length: 3800,
+      sky: ['#2b3a6b', '#5b6bb0'],
+      ground: '#3f8f6a',
+      props: [
+        { type: 'buckets', x: 520 },
+        { type: 'cartcreature', x: 760 },
+        { type: 'golfcart', x: 810 },
+        { type: 'trampoline', x: 1050 },
+        { type: 'portaloo', x: 1300 },
+        { type: 'scarecrow', x: 1600 },
+        { type: 'sprinkler', x: 1850 },
+        { type: 'picnic', x: 2150 },
+        { type: 'trampoline', x: 2450 },
+        { type: 'cartcreature', x: 2700 },
+        { type: 'golfcart', x: 2760 },
+        { type: 'portaloo', x: 3050 },
+        { type: 'scarecrow', x: 3350 },
+        { type: 'picnic', x: 3600 }
+      ]
+    }
+  ];
+
+  function getLevel(idOrIndex) {
+    if (typeof idOrIndex === 'number') return LEVELS[idOrIndex] || null;
+    return LEVELS.find((l) => l.id === idOrIndex) || null;
+  }
+
+  /** Max scorable points in a level (props only, ignoring combos). */
+  function levelMaxPoints(level, propPoints) {
+    return level.props.reduce((sum, p) => sum + propPoints(p.type), 0);
+  }
+
+  const api = { TEE_X, GROUND_Y, LEVELS, getLevel, levelMaxPoints };
+
+  global.GS = global.GS || {};
+  global.GS.Levels = api;
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+})(typeof window !== 'undefined' ? window : globalThis);
