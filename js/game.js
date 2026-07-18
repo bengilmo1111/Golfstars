@@ -621,6 +621,68 @@
       Audio.setMuted(m);
       $('#btn-mute').textContent = m ? '🔇' : '🔊';
     };
+    bindFullscreen();
+  }
+
+  // ---------- Fullscreen ----------
+  function fsElement() {
+    return document.fullscreenElement || document.webkitFullscreenElement || null;
+  }
+
+  function fsSupported() {
+    const el = document.documentElement;
+    return !!(
+      document.fullscreenEnabled ||
+      document.webkitFullscreenEnabled ||
+      el.requestFullscreen ||
+      el.webkitRequestFullscreen
+    );
+  }
+
+  function toggleFullscreen() {
+    const el = document.documentElement;
+    if (!fsElement()) {
+      const req = el.requestFullscreen || el.webkitRequestFullscreen;
+      if (req) {
+        const r = req.call(el);
+        if (r && r.catch) r.catch(() => {});
+      }
+    } else {
+      const exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if (exit) exit.call(document);
+    }
+  }
+
+  function refreshFullscreenButtons() {
+    const inFs = !!fsElement();
+    document.querySelectorAll('.js-fullscreen').forEach((btn) => {
+      const isTitleBtn = btn.classList.contains('ghost-btn');
+      if (isTitleBtn) {
+        btn.textContent = inFs ? '⛶ Exit fullscreen' : '⛶ Fullscreen';
+      } else {
+        btn.textContent = inFs ? '⤢' : '⛶';
+      }
+      btn.title = inFs ? 'Exit fullscreen' : 'Toggle fullscreen';
+    });
+  }
+
+  function bindFullscreen() {
+    const buttons = document.querySelectorAll('.js-fullscreen');
+    if (!fsSupported()) {
+      // iOS iPhone Safari etc. — hide the control (Add to Home Screen covers it).
+      buttons.forEach((b) => (b.style.display = 'none'));
+      return;
+    }
+    buttons.forEach((b) => {
+      b.onclick = () => {
+        Audio.unlock();
+        Audio.play('ui');
+        toggleFullscreen();
+      };
+    });
+    document.addEventListener('fullscreenchange', refreshFullscreenButtons);
+    document.addEventListener('webkitfullscreenchange', refreshFullscreenButtons);
+    refreshFullscreenButtons();
   }
 
   function bindInput() {
