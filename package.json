@@ -4,10 +4,11 @@
   "description": "A silly, mobile-first driving-range golf game for kids. HTML5 Canvas, no build step, no backend.",
   "private": true,
   "scripts": {
-    "test": "node --test \"test/unit/*.test.js\"",
+    "test": "node --test test/unit/*.test.js",
     "test:e2e": "node test/e2e/smoke.mjs",
     "test:all": "npm test && npm run test:e2e",
-    "serve": "node scripts/serve.js"
+    "serve": "node scripts/serve.js",
+    "assets:generate": "node scripts/generate-backgrounds.mjs"
   },
   "license": "MIT",
   "dependencies": {

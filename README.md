@@ -4,15 +4,19 @@ A silly, mobile-first driving-range golf game for kids. Flick the ball to smash
 the funniest targets on the range — launch creatures, blow open porta-loos,
 topple bucket stacks, and bounce off trampolines for combo multipliers.
 
-Built with plain HTML5 Canvas + JavaScript. **No build step, no backend, no
-binary assets** — all graphics are drawn procedurally and every sound is
-synthesised with the Web Audio API.
+Built with plain HTML5 Canvas + JavaScript. **No build step and no backend**; the game now ships a small set of illustrated background images (the only binary assets) with procedural gradient fallbacks, while characters, props, HUD, effects, and sounds remain procedural or synthesised at runtime.
 
 See [`docs/PRD.md`](docs/PRD.md) for the full product spec.
 
 ## Play it
 
 Because the game is just static files, you can open it a few ways:
+
+Generate the illustrated WebP backgrounds locally first if they are not already present (the WebPs are intentionally ignored so hosts that block binary pushes can still apply the code changes):
+
+```bash
+npm run assets:generate
+```
 
 ```bash
 # 1. Zero-dependency static server (recommended — some browsers block
