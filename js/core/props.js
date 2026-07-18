@@ -78,6 +78,42 @@
       reaction: 'bounce',
       bounce: 1.35, // velocity multiplier applied on contact
       comboBonus: true // hitting it raises the combo multiplier for the shot
+    },
+    // A creature that patrols left/right — a timing challenge. `patrol` is how
+    // far it roams from its home x; `speed` sets the pace.
+    movingcreature: {
+      label: 'Runaway Creature',
+      points: 220,
+      width: 60,
+      height: 80,
+      sound: 'boing',
+      reaction: 'launch',
+      voice: true,
+      moving: true,
+      patrol: 130,
+      speed: 1.5
+    },
+    // A high-floating jackpot: you have to loft a shot to reach it. `float` is
+    // the height (world units) of the balloon's underside above the ground.
+    balloon: {
+      label: 'Jackpot Balloon',
+      points: 400,
+      width: 66,
+      height: 78,
+      sound: 'pop',
+      reaction: 'pop',
+      jackpot: true,
+      float: 250
+    },
+    // A wide, shallow hazard. Landing in it voids the shot (splash!). Non-scoring.
+    water: {
+      label: 'Water Hazard',
+      points: 0,
+      width: 240,
+      height: 22,
+      sound: 'splash',
+      reaction: 'splash',
+      hazard: true
     }
   };
 

@@ -63,16 +63,21 @@ Keeping clear water between this and existing IP: different silhouette, colour, 
 - Golf cart
 - Picnic table with a napping creature — flips them awake
 - Trampoline prop that bounces the ball for a bonus multiplier
+- **Runaway creature** — a target that patrols left/right (a timing challenge)
+- **Jackpot balloon** — a high-floating, high-value target you must loft a shot to reach
+- **Water hazard** — landing in it voids the shot with a comedic splash (risk/reward)
 
 ## 9. Controls
 - **Aim & power:** Touch/click and drag back from the ball (slingshot). The drag vector sets angle and power. Release to fire.
-- A dashed trajectory preview shows the predicted arc while dragging.
+- A dashed trajectory preview shows the predicted arc while dragging (and reflects wind + spin).
+- **Spin:** a Back / None / Top control — backspin checks the ball up (stop it short of a hazard), topspin rolls it out for distance.
+- **Wind:** some levels have a steady wind (shown by an on-screen arrow) that pushes the airborne ball, so the same angle+power isn't always the same shot.
 
 ## 10. Scoring Model
 - Each funny target has a point value. Hitting it awards points and triggers a reaction.
 - Distance awards a small bonus (1 point per ~40 units) — secondary to target hits.
-- Combos: hitting multiple targets in a single shot multiplies that shot's target points.
-- Round score = sum of all shots. Best score per level is stored locally.
+- **Live combo:** each target (or trampoline) hit bumps a combo counter and refreshes a short timer shown by an on-screen meter; the multiplier grows with the chain and every hit scores at the live multiplier. Let the timer lapse — or splash into water — and the chain resets. Chains can even carry across shots if you keep hitting.
+- Round score = sum of all shots. Best score and best combo per level are stored locally.
 
 ## 11. Rewards / Unlocks
 Unlocked by reaching cumulative-score milestones, persisted locally:

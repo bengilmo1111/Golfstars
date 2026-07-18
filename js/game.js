@@ -19,6 +19,8 @@
     state.screen = name;
     const playing = name === 'play';
     $('#hud').style.display = playing ? 'flex' : 'none';
+    const spinBar = $('#spin-bar');
+    if (spinBar) spinBar.style.display = playing ? 'flex' : 'none';
   }
 
   // ---------- Game state ----------
@@ -44,7 +46,9 @@
     swingT: 0,
     flightTime: 0,
     shotStartX: 0,
-    lastSummary: null
+    lastSummary: null,
+    spin: 0, // -1 backspin, 0 none, +1 topspin
+    worldTime: 0
   };
 
   let canvas, ctx, W, H, DPR;
@@ -96,11 +100,27 @@
     state.ballDef = Unlocks.getBall(state.save.selectedBall);
     state.clubDef = Unlocks.getClub(state.save.selectedClub);
     state.round = Scoring.createRound(Props.propPoints);
-    state.props = level.props.map((p) => ({ type: p.type, x: Levels.TEE_X + p.x, y: 0, hit: false, hitT: null, cooldown: 0 }));
+    state.props = level.props.map((p) => {
+      const def = Props.getPropType(p.type);
+      const homeX = Levels.TEE_X + p.x;
+      return {
+        type: p.type,
+        x: homeX,
+        homeX,
+        y: def && def.float ? def.float : 0, // balloons sit at their float height
+        phase: Math.random() * Math.PI * 2,
+        hit: false,
+        hitT: null,
+        cooldown: 0
+      };
+    });
     state.shotsLeft = level.shots;
     state.particles = [];
     state.floaters = [];
     state.lastSummary = null;
+    state.worldTime = 0;
+    state.spin = 0;
+    updateSpinButtons();
     teeUpBall();
     state.camX = Levels.TEE_X - (W / 3) / state.scale;
     updateHud();
@@ -183,7 +203,10 @@
   }
 
   function ballPhysicsOpts() {
-    return Object.assign({}, state.ballDef.physics);
+    return Object.assign({}, state.ballDef.physics, {
+      wind: (state.level && state.level.wind) || 0,
+      spin: state.spin || 0
+    });
   }
 
   // Impact happens partway through the swing so the club connects with the ball.
@@ -237,6 +260,21 @@
         continue;
       }
 
+      // Water hazard: getting caught voids the shot.
+      if (def.hazard) {
+        if (!state.round.voided && Props.hitsProp(ball.x, ball.y, ball.radius, prop)) {
+          state.round.voidShot();
+          ball.vx = 0;
+          ball.vy = 0;
+          ball.resting = true;
+          prop.hitT = 0;
+          Audio.play('splash');
+          spawnSplash(ball.x);
+          spawnFloater(ball.x, def.height + 20, 'SPLASH!', '#7ad0ff');
+        }
+        continue;
+      }
+
       if (prop.hit) continue;
       if (Props.hitsProp(ball.x, ball.y, ball.radius, prop)) {
         smashProp(prop);
@@ -258,14 +296,34 @@
     const def = Props.getPropType(prop.type);
     prop.hit = true;
     prop.hitT = 0;
-    const pts = state.round.registerHit(prop.type);
+    const res = state.round.registerHit(prop.type);
     Audio.play(def.sound);
-    // Extra sparkle when this shot is stringing targets together.
-    if (state.round._targetHits >= 2) Audio.play('combo');
+    // Extra sparkle as the live combo builds.
+    if (res.combo >= 2) Audio.play('combo');
     if (def.voice && state.character) Audio.voice(state.character.voicePitch + 60, 'hurt');
-    spawnBurst(prop.x, def.height * 0.6);
-    if (pts > 0) {
-      spawnFloater(prop.x, def.height + 10, '+' + pts, '#ffd23f');
+    const burstY = def.jackpot ? prop.y + def.height * 0.5 : def.height * 0.6;
+    spawnBurst(prop.x, burstY, def.jackpot ? 20 : 12);
+    if (res.awarded > 0) {
+      const label = '+' + res.awarded + (res.multiplier > 1 ? ' x' + res.multiplier.toFixed(1) : '');
+      const y = (def.jackpot ? prop.y + def.height : def.height) + 10;
+      spawnFloater(prop.x, y, label, def.jackpot ? '#ffd23f' : '#ffe38a');
+    }
+  }
+
+  function spawnSplash(x) {
+    for (let i = 0; i < 16; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.4;
+      const sp = 80 + Math.random() * 180;
+      state.particles.push({
+        x,
+        y: 6,
+        vx: Math.cos(a) * sp,
+        vy: Math.abs(Math.sin(a) * sp) + 60,
+        r: 2 + Math.random() * 3,
+        life: 0.8,
+        maxLife: 0.8,
+        color: ['#7ad0ff', '#bfeaff', '#fff'][i % 3]
+      });
     }
   }
 
@@ -273,8 +331,9 @@
     state.floaters.push({ x, y, text, color, life: 1.2, maxLife: 1.2 });
   }
 
-  function spawnBurst(x, y) {
-    for (let i = 0; i < 12; i++) {
+  function spawnBurst(x, y, count) {
+    count = count || 12;
+    for (let i = 0; i < count; i++) {
       const a = Math.random() * Math.PI * 2;
       const sp = 60 + Math.random() * 160;
       state.particles.push({
@@ -310,15 +369,23 @@
   // ---------- Update ----------
   const SUBSTEP = 1 / 120;
   function update(dt) {
+    state.worldTime += dt;
     // Advance the swing clock through the wind-up and flight.
     if (state.phase === 'windup' || state.phase === 'flight' || state.phase === 'settling') {
       state.swingT += dt;
     }
+    // Let the live combo timer decay even between shots.
+    if (state.round) state.round.tick(dt);
 
     updateParticles(dt);
     updateFloaters(dt);
     for (const p of state.props) {
       if (p.hitT != null) p.hitT += dt;
+      // Roaming targets patrol left/right until smashed.
+      const def = Props.getPropType(p.type);
+      if (def && def.moving && !p.hit) {
+        p.x = p.homeX + Math.sin((state.worldTime + p.phase) * def.speed) * def.patrol;
+      }
     }
 
     // Mid-swing: release the ball at the moment of impact.
@@ -433,6 +500,11 @@
       Render.drawAim(ctx, view, bs, -state.aim.dragX, -state.aim.dragY, state.aim.traj);
     }
     Render.drawFloaters(ctx, view, state.floaters);
+    // On-screen depth UI: wind indicator + live combo meter.
+    Render.drawWind(ctx, W, H, (state.level && state.level.wind) || 0);
+    Render.drawComboMeter(ctx, W, H, state.round);
+    // Score ticks up live as the combo scores during flight.
+    if (state.round) $('#hud-score').textContent = state.round.total;
   }
 
   // ---------- HUD ----------
@@ -460,13 +532,18 @@
     $('#result-score').textContent = score;
     $('#result-best').textContent = storage.getBest(state.level.id);
     $('#result-bestflag').style.display = isBest ? 'inline' : 'none';
+    const comboEl = $('#result-combo');
+    if (comboEl) {
+      comboEl.textContent = state.round.bestCombo >= 2 ? '🔥 Best combo: x' + state.round.bestCombo : '';
+    }
     const shotsEl = $('#result-shots');
     shotsEl.innerHTML = '';
     state.round.shots.forEach((s, i) => {
       const li = document.createElement('li');
       li.textContent =
         'Shot ' + (i + 1) + ': ' + s.shotTotal + ' pts' +
-        (s.targetHits > 1 ? ' (x' + s.multiplier.toFixed(1) + ' combo!)' : '') +
+        (s.maxMultiplier > 1 ? ' (x' + s.maxMultiplier.toFixed(1) + ')' : '') +
+        (s.voided ? ' 💦 splash!' : '') +
         ' — ' + s.distance + 'm';
       shotsEl.appendChild(li);
     });
@@ -647,7 +724,25 @@
       Audio.setMuted(m);
       $('#btn-mute').textContent = m ? '🔇' : '🔊';
     };
+    bindSpin();
     bindFullscreen();
+  }
+
+  // ---------- Spin control ----------
+  function bindSpin() {
+    document.querySelectorAll('.spin-btn').forEach((btn) => {
+      btn.onclick = () => {
+        state.spin = Number(btn.getAttribute('data-spin'));
+        updateSpinButtons();
+        Audio.play('ui');
+      };
+    });
+  }
+
+  function updateSpinButtons() {
+    document.querySelectorAll('.spin-btn').forEach((b) => {
+      b.classList.toggle('active', Number(b.getAttribute('data-spin')) === (state.spin || 0));
+    });
   }
 
   // ---------- Fullscreen ----------

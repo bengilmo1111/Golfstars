@@ -196,13 +196,19 @@
     const type = prop.type;
     const def = Props.getPropType(type);
     if (!def) return;
-    const base = view.toScreen(prop.x, 0);
     const s = view.scale;
     const w = def.width * s;
     const h = def.height * s;
     // Animation progress since hit (seconds); undefined if not hit.
     const a = prop.hitT != null ? prop.hitT : -1;
 
+    // Balloons float, so they carry their own transform down to the ground.
+    if (type === 'balloon') {
+      drawBalloon(ctx, view, prop, w, h, a);
+      return;
+    }
+
+    const base = view.toScreen(prop.x, 0);
     ctx.save();
     ctx.translate(base.x, base.y);
 
@@ -230,6 +236,12 @@
         break;
       case 'trampoline':
         drawTrampoline(ctx, w, h, a);
+        break;
+      case 'movingcreature':
+        drawMovingCreature(ctx, w, h, a);
+        break;
+      case 'water':
+        drawWater(ctx, w, h, t);
         break;
     }
     ctx.restore();
@@ -432,6 +444,89 @@
     ctx.stroke();
   }
 
+  function drawMovingCreature(ctx, w, h, a) {
+    const r = h * 0.3;
+    if (a < 0) {
+      // Little dust puffs under a scurrying creature.
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.beginPath();
+      ctx.ellipse(-w * 0.5, -2, w * 0.22, 5, 0, 0, Math.PI * 2);
+      ctx.fill();
+      drawCreature(ctx, 0, 0, r, { body: '#ff5d8f', belly: '#ffd0e6', arm: performance.now() / 90 });
+    } else {
+      const p = Math.min(1, a / 1.2);
+      const x = p * 130;
+      const y = -Math.sin(p * Math.PI) * 210 - p * 40;
+      ctx.globalAlpha = 1 - p * 0.7;
+      drawCreature(ctx, x, y, r, { body: '#ff5d8f', belly: '#ffd0e6', rot: a * 13, squash: 0.2 });
+      ctx.globalAlpha = 1;
+    }
+  }
+
+  function drawWater(ctx, w, h, t) {
+    ctx.fillStyle = 'rgba(70,160,235,0.9)';
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, 2);
+    for (let x = -w / 2; x <= w / 2; x += 8) {
+      ctx.lineTo(x, -h + Math.sin(x * 0.06 + t * 3) * 3);
+    }
+    ctx.lineTo(w / 2, 2);
+    ctx.closePath();
+    ctx.fill();
+    // Sparkle highlights.
+    ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+    ctx.lineWidth = 2;
+    for (let i = 0; i < 4; i++) {
+      const hx = -w * 0.3 + i * w * 0.2;
+      ctx.beginPath();
+      ctx.moveTo(hx, -h * 0.4);
+      ctx.lineTo(hx + 8, -h * 0.4);
+      ctx.stroke();
+    }
+  }
+
+  // Balloons manage their own transform: string down to the ground + bobbing.
+  function drawBalloon(ctx, view, prop, w, h, a) {
+    const bottom = view.toScreen(prop.x, prop.y);
+    const ground = view.toScreen(prop.x, 0);
+    if (a >= 0) return; // popped — the game spawns the burst particles
+    ctx.save();
+    ctx.translate(bottom.x, bottom.y);
+    // String to the ground.
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    ctx.lineTo(0, ground.y - bottom.y);
+    ctx.stroke();
+    // Bobbing balloon body.
+    const bob = Math.sin(performance.now() / 400 + prop.phase) * 4;
+    ctx.translate(0, -h * 0.5 + bob);
+    ctx.fillStyle = '#ffcf33';
+    ctx.beginPath();
+    ctx.ellipse(0, -h * 0.08, w * 0.5, h * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // Shine + knot + a little "$" cue for jackpot.
+    ctx.fillStyle = 'rgba(255,255,255,0.5)';
+    ctx.beginPath();
+    ctx.ellipse(-w * 0.16, -h * 0.22, w * 0.1, h * 0.14, -0.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ffcf33';
+    ctx.beginPath();
+    ctx.moveTo(-4, h * 0.4);
+    ctx.lineTo(4, h * 0.4);
+    ctx.lineTo(0, h * 0.5);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#c98a00';
+    ctx.font = 'bold ' + Math.round(h * 0.4) + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('★', 0, -h * 0.05);
+    ctx.textBaseline = 'alphabetic';
+    ctx.restore();
+  }
+
   // ---------- Ball ----------
   function drawBall(ctx, view, ball, ballDef, trail) {
     const s = view.scale;
@@ -569,6 +664,72 @@
     });
   }
 
+  function roundedRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + w, y, x + w, y + h, r);
+    ctx.arcTo(x + w, y + h, x, y + h, r);
+    ctx.arcTo(x, y + h, x, y, r);
+    ctx.arcTo(x, y, x + w, y, r);
+    ctx.closePath();
+  }
+
+  // Wind indicator under the HUD (arrow length/direction show strength).
+  function drawWind(ctx, W, H, wind) {
+    if (!wind) return;
+    const cx = 54;
+    const y = 116;
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.strokeStyle = 'rgba(0,0,0,0.35)';
+    ctx.lineWidth = 3;
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.strokeText('WIND', cx, y - 12);
+    ctx.fillText('WIND', cx, y - 12);
+    const dir = wind > 0 ? 1 : -1;
+    const strength = Math.min(1, Math.abs(wind) / 300);
+    const len = 22 + strength * 26;
+    ctx.strokeStyle = wind > 0 ? '#8affc1' : '#ffb3b3';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    const x0 = cx - (dir * len) / 2;
+    const x1 = cx + (dir * len) / 2;
+    ctx.beginPath();
+    ctx.moveTo(x0, y);
+    ctx.lineTo(x1, y);
+    ctx.lineTo(x1 - dir * 9, y - 7);
+    ctx.moveTo(x1, y);
+    ctx.lineTo(x1 - dir * 9, y + 7);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // Live combo meter (top-centre) with a draining timer bar.
+  function drawComboMeter(ctx, W, H, round) {
+    if (!round || round.combo < 2) return;
+    const mult = round.currentMultiplier();
+    const frac = round.comboFraction();
+    const w = 168;
+    const h = 50;
+    const x = W / 2 - w / 2;
+    const y = 66;
+    ctx.save();
+    roundedRect(ctx, x, y, w, h, 14);
+    ctx.fillStyle = 'rgba(20,30,40,0.55)';
+    ctx.fill();
+    ctx.textAlign = 'center';
+    ctx.font = 'bold 22px system-ui, sans-serif';
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillText('COMBO ×' + mult.toFixed(1), W / 2, y + 24);
+    // Timer bar.
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.fillRect(x + 14, y + 33, w - 28, 8);
+    ctx.fillStyle = '#ff5d8f';
+    ctx.fillRect(x + 14, y + 33, (w - 28) * frac, 8);
+    ctx.restore();
+  }
+
   const api = {
     drawBackground,
     drawGround,
@@ -579,6 +740,8 @@
     drawParticles,
     drawFloaters,
     drawTee,
+    drawWind,
+    drawComboMeter,
     lerp
   };
 

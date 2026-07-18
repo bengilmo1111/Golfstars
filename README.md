@@ -33,10 +33,17 @@ voices, and a light background music loop. Audio unlocks on your first tap/click
 1. Tap **Play**, pick a character (Henry, Casper, or Nina), choose your gear.
 2. On the range, **touch-and-drag back from the ball** like a slingshot — the
    dashed arc previews your shot. Release to fire.
-3. Smash funny targets for points (multi-hits build a **combo multiplier**),
-   distance is a small bonus. Trampolines bounce you for extra combo.
-4. You get a set number of shots per range. Beat your best score!
-5. Points add to your **career score**, which unlocks new balls (bouncy,
+3. Smash funny targets for points. Chain hits before the **combo meter**
+   timer drains — the multiplier climbs with the chain and every hit scores
+   at the live multiplier. Trampolines keep the chain alive; distance is a
+   small bonus.
+4. Watch the **wind** arrow on breezy ranges, and use the **spin** control
+   (Back / None / Top) — backspin checks the ball up short of the **water
+   hazard**, topspin rolls it out for distance. Loft a shot to pop the
+   high-floating **jackpot balloon**, and time your swing for the **runaway
+   creature** that patrols back and forth.
+5. You get a set number of shots per range. Beat your best score!
+6. Points add to your **career score**, which unlocks new balls (bouncy,
    boomerang, beach ball, exploding) and clubs.
 
 Progress (best scores, career score, unlocks, selections) is saved locally in

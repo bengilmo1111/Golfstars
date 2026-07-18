@@ -37,6 +37,29 @@ test('trampoline declares a bounce multiplier and combo bonus', () => {
   assert.strictEqual(t.comboBonus, true);
 });
 
+test('new target types carry their behavior flags', () => {
+  const mv = Props.getPropType('movingcreature');
+  assert.strictEqual(mv.moving, true);
+  assert.ok(mv.patrol > 0 && mv.speed > 0, 'moving target needs patrol + speed');
+  assert.ok(mv.points > 0, 'moving target scores');
+
+  const bal = Props.getPropType('balloon');
+  assert.strictEqual(bal.jackpot, true);
+  assert.ok(bal.float > 100, 'balloon floats high');
+  assert.ok(bal.points >= 300, 'balloon is a jackpot');
+
+  const water = Props.getPropType('water');
+  assert.strictEqual(water.hazard, true);
+  assert.strictEqual(Props.propPoints('water'), 0);
+});
+
+test('a floating balloon is only hit when the ball reaches its height', () => {
+  const bal = Props.getPropType('balloon');
+  const prop = { type: 'balloon', x: 500, y: bal.float }; // bottom at float height
+  assert.strictEqual(Props.hitsProp(500, bal.float + 10, 16, prop), true, 'hit up at height');
+  assert.strictEqual(Props.hitsProp(500, 0, 16, prop), false, 'ground ball misses the balloon');
+});
+
 test('hitsProp on an unknown prop type is false', () => {
   assert.strictEqual(Props.hitsProp(0, 0, 16, { type: 'ghost', x: 0, y: 0 }), false);
 });
