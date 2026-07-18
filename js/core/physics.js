@@ -45,6 +45,10 @@
     if (cfg.boomerangAccel && ball.y > 0) {
       ball.vx -= cfg.boomerangAccel * dt;
     }
+    // Wind pushes the airborne ball sideways (per-level, +right / -left).
+    if (cfg.wind && ball.y > 0) {
+      ball.vx += cfg.wind * dt;
+    }
     // Air drag.
     const drag = 1 - cfg.airDrag * (Math.hypot(ball.vx, ball.vy) * dt);
     ball.vx *= drag;
@@ -56,23 +60,30 @@
     ball.y += ball.vy * dt;
 
     let event = '';
+    const spin = cfg.spin || 0; // -1 backspin .. +1 topspin
 
     // Ground collision.
     if (ball.y <= 0) {
       ball.y = 0;
       if (ball.vy < 0) {
+        const impact = -ball.vy;
         // Bounce if moving down with enough speed, else settle to rolling.
-        if (-ball.vy > cfg.minRestSpeed) {
-          ball.vy = -ball.vy * cfg.restitution;
+        if (impact > cfg.minRestSpeed) {
+          ball.vy = impact * cfg.restitution;
           ball.vx *= cfg.groundFriction;
+          // Spin bites on the bounce: topspin drives forward, backspin checks
+          // it (and can spin the ball back toward the tee).
+          if (spin) ball.vx += spin * impact * 0.5;
           event = 'bounce';
         } else {
           ball.vy = 0;
         }
       }
-      // Rolling friction while grounded.
+      // Rolling friction while grounded (topspin rolls out, backspin grabs).
       if (ball.vy === 0) {
-        ball.vx *= Math.pow(cfg.groundFriction, dt * 12);
+        let fr = cfg.groundFriction;
+        if (spin) fr = Math.max(0.4, Math.min(0.98, fr * (1 - 0.12 * spin)));
+        ball.vx *= Math.pow(fr, dt * 12);
         if (Math.abs(ball.vx) < cfg.minRestSpeed) {
           ball.vx = 0;
           ball.resting = true;

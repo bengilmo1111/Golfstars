@@ -8,23 +8,28 @@
   const TEE_X = 120;
   const GROUND_Y = 0; // world ground line (height above ground is negative y going up)
 
+  // `wind` (world units/s^2, + right / - left) is applied to the airborne ball.
   const LEVELS = [
     {
       id: 'sunny-range',
       name: 'Sunny Range',
       shots: 5,
       length: 2600, // downrange world length
+      wind: 0,
       sky: ['#8fd6ff', '#d7f2ff'],
       ground: '#6fca5a',
       props: [
         { type: 'buckets', x: 520 },
         { type: 'cartcreature', x: 780 },
         { type: 'golfcart', x: 820 },
+        { type: 'balloon', x: 1000 },
         { type: 'scarecrow', x: 1150 },
         { type: 'trampoline', x: 1400 },
-        { type: 'sprinkler', x: 1650 },
-        { type: 'portaloo', x: 1950 },
-        { type: 'picnic', x: 2300 }
+        { type: 'movingcreature', x: 1600 },
+        { type: 'sprinkler', x: 1800 },
+        { type: 'water', x: 2100 },
+        { type: 'portaloo', x: 2350 },
+        { type: 'picnic', x: 2520 }
       ]
     },
     {
@@ -32,19 +37,22 @@
       name: 'Sunset Hills',
       shots: 5,
       length: 3000,
+      wind: 240, // gentle tailwind
       sky: ['#ffb36b', '#ffe0a3'],
       ground: '#57b968',
       props: [
         { type: 'scarecrow', x: 500 },
         { type: 'buckets', x: 700 },
         { type: 'trampoline', x: 900 },
+        { type: 'balloon', x: 1050 },
         { type: 'cartcreature', x: 1200 },
         { type: 'golfcart', x: 1250 },
-        { type: 'sprinkler', x: 1550 },
-        { type: 'picnic', x: 1850 },
-        { type: 'portaloo', x: 2200 },
-        { type: 'scarecrow', x: 2500 },
-        { type: 'cartcreature', x: 2750 }
+        { type: 'water', x: 1550 },
+        { type: 'movingcreature', x: 1850 },
+        { type: 'picnic', x: 2050 },
+        { type: 'portaloo', x: 2300 },
+        { type: 'scarecrow', x: 2550 },
+        { type: 'cartcreature', x: 2800 }
       ]
     },
     {
@@ -52,19 +60,22 @@
       name: 'Chaos Carnival',
       shots: 6,
       length: 3400,
+      wind: -200, // tricky headwind
       sky: ['#b48cff', '#ffd0f0'],
       ground: '#4fbf8a',
       props: [
         { type: 'trampoline', x: 460 },
         { type: 'portaloo', x: 620 },
         { type: 'buckets', x: 850 },
-        { type: 'sprinkler', x: 1050 },
+        { type: 'balloon', x: 1000 },
+        { type: 'sprinkler', x: 1150 },
         { type: 'trampoline', x: 1300 },
-        { type: 'cartcreature', x: 1550 },
-        { type: 'golfcart', x: 1600 },
-        { type: 'scarecrow', x: 1900 },
-        { type: 'picnic', x: 2200 },
-        { type: 'portaloo', x: 2550 },
+        { type: 'movingcreature', x: 1550 },
+        { type: 'golfcart', x: 1700 },
+        { type: 'water', x: 1950 },
+        { type: 'scarecrow', x: 2200 },
+        { type: 'picnic', x: 2400 },
+        { type: 'balloon', x: 2600 },
         { type: 'trampoline', x: 2800 },
         { type: 'picnic', x: 3050 }
       ]
@@ -74,23 +85,26 @@
       name: 'Moonlight Madness',
       shots: 6,
       length: 3800,
+      wind: 180,
       sky: ['#2b3a6b', '#5b6bb0'],
       ground: '#3f8f6a',
       props: [
         { type: 'buckets', x: 520 },
         { type: 'cartcreature', x: 760 },
         { type: 'golfcart', x: 810 },
-        { type: 'trampoline', x: 1050 },
+        { type: 'balloon', x: 1000 },
+        { type: 'trampoline', x: 1100 },
         { type: 'portaloo', x: 1300 },
-        { type: 'scarecrow', x: 1600 },
-        { type: 'sprinkler', x: 1850 },
-        { type: 'picnic', x: 2150 },
-        { type: 'trampoline', x: 2450 },
-        { type: 'cartcreature', x: 2700 },
-        { type: 'golfcart', x: 2760 },
-        { type: 'portaloo', x: 3050 },
-        { type: 'scarecrow', x: 3350 },
-        { type: 'picnic', x: 3600 }
+        { type: 'movingcreature', x: 1600 },
+        { type: 'water', x: 1900 },
+        { type: 'scarecrow', x: 2150 },
+        { type: 'sprinkler', x: 2400 },
+        { type: 'balloon', x: 2600 },
+        { type: 'cartcreature', x: 2800 },
+        { type: 'golfcart', x: 2860 },
+        { type: 'portaloo', x: 3100 },
+        { type: 'picnic', x: 3400 },
+        { type: 'movingcreature', x: 3600 }
       ]
     }
   ];

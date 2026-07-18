@@ -29,6 +29,14 @@
       <button id="btn-quit" class="quit">✕</button>
     </div>
 
+    <!-- Spin control (during play) -->
+    <div id="spin-bar">
+      <span class="spin-label">SPIN</span>
+      <button class="spin-btn" data-spin="-1">⤺ Back</button>
+      <button class="spin-btn active" data-spin="0">● None</button>
+      <button class="spin-btn" data-spin="1">Top ⤻</button>
+    </div>
+
     <!-- Title -->
     <section id="screen-title" class="screen active">
       <div class="panel">
@@ -84,6 +92,7 @@
         <p class="sub" id="result-level"></p>
         <div class="score-big"><span id="result-score">0</span> pts</div>
         <p class="sub">Best: <b id="result-best">0</b> <span id="result-bestflag" class="flag">NEW BEST! ⭐</span></p>
+        <p class="sub" id="result-combo"></p>
         <ul id="result-shots" class="shots"></ul>
         <div id="result-unlock-wrap"><div id="result-unlocks"></div></div>
         <div class="row">

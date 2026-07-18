@@ -61,6 +61,33 @@ test('boomerang acceleration pulls the ball back downrange', () => {
   assert.ok(boomer.vx < plain.vx, 'boomerang should reduce forward velocity vs plain');
 });
 
+test('wind pushes the airborne ball sideways', () => {
+  function landX(wind) {
+    const ball = { x: 0, y: 0, vx: 900, vy: 900, radius: 16, resting: false };
+    let landed = false;
+    for (let i = 0; i < 4000 && !landed; i++) {
+      Physics.stepBall(ball, 1 / 120, { wind });
+      if (i > 5 && ball.y === 0 && ball.vy === 0) landed = true;
+    }
+    return ball.x;
+  }
+  assert.ok(landX(600) > landX(0), 'tailwind carries the ball further');
+  assert.ok(landX(-600) < landX(0), 'headwind shortens the ball');
+});
+
+test('topspin rolls out further than backspin after landing', () => {
+  function restX(spin) {
+    const ball = { x: 0, y: 300, vx: 800, vy: -40, radius: 16, resting: false };
+    for (let i = 0; i < 6000; i++) {
+      const ev = Physics.stepBall(ball, 1 / 120, { spin });
+      if (ev === 'rest') break;
+    }
+    return ball.x;
+  }
+  assert.ok(restX(1) > restX(0), 'topspin rolls out further than none');
+  assert.ok(restX(-1) < restX(0), 'backspin checks up shorter than none');
+});
+
 test('launchFromDrag inverts the drag and clamps to maxLaunch', () => {
   // Drag down-left (screen y down positive) -> launch up-right.
   const v = Physics.launchFromDrag(-100, 80, 3, 2600);
