@@ -58,7 +58,11 @@
     canvas.height = Math.round(H * DPR);
     ctx = canvas.getContext('2d');
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-    state.scale = clamp(W / 900, 0.55, 1.1);
+    // Scale so we always frame ~560 world-units of height (keeps the ball and
+    // the tee readable) AND up to ~900 world-units of width. Taking the min of
+    // the two means a wide landscape viewport zooms out to reveal much more of
+    // the course down-range, while portrait stays comfortably framed.
+    state.scale = clamp(Math.min(W / 900, (H - 120) / 560), 0.45, 1.1);
     state.groundScreenY = H - 96;
   }
 
@@ -241,6 +245,8 @@
     prop.hitT = 0;
     const pts = state.round.registerHit(prop.type);
     Audio.play(def.sound);
+    // Extra sparkle when this shot is stringing targets together.
+    if (state.round._targetHits >= 2) Audio.play('combo');
     if (def.voice && state.character) Audio.voice(state.character.voicePitch + 60, 'hurt');
     spawnBurst(prop.x, def.height * 0.6);
     if (pts > 0) {

@@ -38,7 +38,8 @@ async function main() {
   const browser = await chromium.launch({ headless: true, executablePath: EXECUTABLE });
   const errors = [];
   try {
-    const page = await browser.newPage({ viewport: { width: 390, height: 780 } });
+    // Landscape-first: the range is designed to show more of the course wide.
+    const page = await browser.newPage({ viewport: { width: 880, height: 460 } });
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
       const text = m.text();

@@ -23,9 +23,7 @@ html, body {
 #app {
   position: fixed;
   inset: 0;
-  /* Portrait-first: cap width so it feels like a phone on desktop. */
-  max-width: 520px;
-  margin: 0 auto;
+  /* Landscape-first: fill the viewport so more of the course is visible. */
   overflow: hidden;
   background: #8fd6ff;
 }
@@ -210,10 +208,10 @@ h3 { font-size: 16px; text-align: left; margin-top: 14px; color: #5a6b76; }
 }
 .board li b { color: var(--accent); }
 
-/* Landscape nudge: game is portrait-only. */
-@media (orientation: landscape) and (max-height: 500px) {
+/* Portrait nudge: the range plays best in landscape. */
+@media (orientation: portrait) and (max-width: 700px) {
   .panel::before {
-    content: "📱 Turn your phone upright for the best experience!";
+    content: "📱 Turn your phone sideways to see more of the course!";
     display: block;
     background: var(--accent2);
     border-radius: 10px;
@@ -222,4 +220,13 @@ h3 { font-size: 16px; text-align: left; margin-top: 14px; color: #5a6b76; }
     font-size: 13px;
     font-weight: 700;
   }
+}
+
+/* On short landscape screens keep menu panels compact and scrollable. */
+@media (orientation: landscape) and (max-height: 560px) {
+  .panel { padding: 16px 20px; max-height: 96vh; }
+  .grid { gap: 8px; }
+  .char-card canvas { width: 64px; height: 64px; }
+  h2 { font-size: 22px; margin-bottom: 6px; }
+  .logo { font-size: 40px; }
 }
