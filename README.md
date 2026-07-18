@@ -4,7 +4,7 @@ A silly, mobile-first driving-range golf game for kids. Flick the ball to smash
 the funniest targets on the range — launch creatures, blow open porta-loos,
 topple bucket stacks, and bounce off trampolines for combo multipliers.
 
-Built with plain HTML5 Canvas + JavaScript. **No build step and no backend**; the game ships a small set of illustrated WebP background images with procedural gradient fallbacks, while characters, props, HUD, effects, and sounds remain procedural or synthesised at runtime.
+Built with plain HTML5 Canvas + JavaScript. **No build step and no backend**; the game ships layered illustrated WebP backgrounds with independent parallax and procedural gradient fallbacks, while characters, props, HUD, effects, and sounds remain procedural or synthesised at runtime.
 
 See [`docs/PRD.md`](docs/PRD.md) for the full product spec.
 

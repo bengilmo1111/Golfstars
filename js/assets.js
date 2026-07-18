@@ -15,7 +15,10 @@
   }
   function get(key) { return status[key] === 'ready' ? cache[key] : null; }
   function preloadLevels(levels) {
-    levels.forEach(function (lvl) { load('bg-' + lvl.id, 'assets/bg-' + lvl.id + '.webp'); });
+    levels.forEach(function (lvl) {
+      load('bg-' + lvl.id, 'assets/bg-' + lvl.id + '.webp');
+      load('mg-' + lvl.id, 'assets/mg-' + lvl.id + '.webp');
+    });
   }
 
   const api = { load, get, preloadLevels, status };

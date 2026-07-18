@@ -25,45 +25,46 @@
 
     const Images = global.GS.Images;
     const bg = Images ? Images.get('bg-' + level.id) : null;
+    const mg = Images ? Images.get('mg-' + level.id) : null;
     if (bg) {
-      drawParallaxImage(ctx, W, H, view.camX, bg);
-      return; // the illustration already includes sky, clouds and distant scenery
-    }
-
-    // ---- Procedural fallback (the existing hills + clouds code stays here) ----
-    // Parallax hills.
-    const camX = view.camX;
-    ctx.fillStyle = 'rgba(255,255,255,0.12)';
-    for (let layer = 0; layer < 2; layer++) {
-      const p = 0.2 + layer * 0.25;
-      const baseY = view.groundScreenY - 40 - layer * 30;
-      ctx.beginPath();
-      ctx.moveTo(0, H);
-      for (let x = -100; x <= W + 100; x += 40) {
-        const wx = (x + camX * p) * 0.5;
-        const y = baseY + Math.sin(wx * 0.01 + layer) * 26;
-        ctx.lineTo(x, y);
+      drawParallaxImage(ctx, W, H, view.camX, bg, 0.2);
+    } else {
+      // ---- Procedural fallback (the existing hills + clouds code stays here) ----
+      // Parallax hills.
+      const camX = view.camX;
+      ctx.fillStyle = 'rgba(255,255,255,0.12)';
+      for (let layer = 0; layer < 2; layer++) {
+        const p = 0.2 + layer * 0.25;
+        const baseY = view.groundScreenY - 40 - layer * 30;
+        ctx.beginPath();
+        ctx.moveTo(0, H);
+        for (let x = -100; x <= W + 100; x += 40) {
+          const wx = (x + camX * p) * 0.5;
+          const y = baseY + Math.sin(wx * 0.01 + layer) * 26;
+          ctx.lineTo(x, y);
+        }
+        ctx.lineTo(W, H);
+        ctx.closePath();
+        ctx.fill();
       }
-      ctx.lineTo(W, H);
-      ctx.closePath();
-      ctx.fill();
+
+      // Clouds (or moon glow on dark levels).
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      for (let i = 0; i < 5; i++) {
+        const cx = ((i * 260 - camX * 0.15) % (W + 200) + W + 200) % (W + 200) - 100;
+        const cy = 60 + (i % 3) * 40;
+        cloud(ctx, cx, cy, 26 + (i % 2) * 8);
+      }
     }
 
-    // Clouds (or moon glow on dark levels).
-    ctx.fillStyle = 'rgba(255,255,255,0.6)';
-    for (let i = 0; i < 5; i++) {
-      const cx = ((i * 260 - camX * 0.15) % (W + 200) + W + 200) % (W + 200) - 100;
-      const cy = 60 + (i % 3) * 40;
-      cloud(ctx, cx, cy, 26 + (i % 2) * 8);
-    }
+    if (mg) drawParallaxImage(ctx, W, H, view.camX, mg, 0.55);
   }
 
   // Cover-scale to height and tile horizontally with slow parallax (invisible seam
   // requires uniform sky at the image's left/right edges).
-  function drawParallaxImage(ctx, W, H, camX, img) {
+  function drawParallaxImage(ctx, W, H, camX, img, parallax) {
     const scale = H / img.height;
     const dw = img.width * scale;
-    const parallax = 0.25; // 0 = static, 1 = moves with camera
     let offset = -((camX * parallax) % dw);
     if (offset > 0) offset -= dw;
     for (let x = offset; x < W; x += dw) ctx.drawImage(img, x, 0, dw, H);
