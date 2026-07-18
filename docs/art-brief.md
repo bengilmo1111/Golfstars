@@ -53,7 +53,11 @@ ids in code):
 | `assets/bg-sunset-hills.webp` | Sunset Hills (golden hour) | 1920×1080 | warm sunset sky, orange-to-cream gradient (#ffb36b→#ffe0a3), low sun glow, silhouetted rolling hills, wispy warm clouds |
 | `assets/bg-chaos-carnival.webp` | Chaos Carnival (playful dusk) | 1920×1080 | playful purple-pink dusk sky (#b48cff→#ffd0f0), a few colourful bunting/pennant garlands strung high in the distance, soft carnival glow on the horizon, distant hills |
 | `assets/bg-moonlight-madness.webp` | Moonlight Madness (night) | 1920×1080 | deep blue starry night sky (#2b3a6b→#5b6bb0), a big friendly round moon, scattered stars, dark rolling distant hills |
+| `assets/bg-windy-cliffs.webp` | Windy Cliffs (breezy day) | 1920×1080 | breezy blue sky (#7fb0d9→#cfe6f2), wind-streaked wispy clouds, distant seaside cliffs/headlands, a few gulls far off |
+| `assets/bg-duck-derby.webp` | Duck Derby (fresh mint day) | 1920×1080 | bright mint-teal sky (#8fe0d0→#e0fff7), soft fluffy clouds, distant wetland/reeds and gentle green hills |
 | `assets/title-bg.webp` | Title splash | 1920×1080 | dreamy pastel golf-range sky at dawn, soft rolling hills, big open empty sky in the centre-top for a logo, no text |
+
+> The four original ranges already ship art; **Windy Cliffs** and **Duck Derby** currently fall back to the procedural gradient — add their two backgrounds to bring them up to the same look. The loader keys off the level id, so the filenames above are all that's needed.
 
 **Shared style line to append to every prompt:** "flat vector storybook
 illustration, chunky simple shapes, soft gradients, no outlines, cheerful

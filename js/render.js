@@ -327,6 +327,12 @@
       case 'water':
         drawWater(ctx, w, h, t);
         break;
+      case 'tnt':
+        drawTNT(ctx, w, h, a);
+        break;
+      case 'beehive':
+        drawBeehive(ctx, w, h, a, t);
+        break;
     }
     ctx.restore();
   }
@@ -887,6 +893,90 @@
     ctx.arc(7, -6, 1, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
+  }
+
+  function drawTNT(ctx, w, h, a) {
+    if (a >= 0) return; // detonated — the explosion particles take over
+    // Wooden crate.
+    const g = ctx.createLinearGradient(0, -h, 0, 0);
+    g.addColorStop(0, '#a9713e');
+    g.addColorStop(1, '#875427');
+    ctx.fillStyle = g;
+    roundedRect(ctx, -w / 2, -h, w, h, 4);
+    ctx.fill();
+    // Plank braces.
+    ctx.strokeStyle = 'rgba(0,0,0,0.18)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(-w / 2 + 2, -h + 2, w - 4, h - 4);
+    ctx.beginPath();
+    ctx.moveTo(-w / 2, -h);
+    ctx.lineTo(w / 2, 0);
+    ctx.moveTo(w / 2, -h);
+    ctx.lineTo(-w / 2, 0);
+    ctx.stroke();
+    // Dynamite bundle on top.
+    for (let i = -1; i <= 1; i++) {
+      ctx.fillStyle = '#c0392b';
+      roundedRect(ctx, i * w * 0.18 - w * 0.06, -h - h * 0.34, w * 0.12, h * 0.34, 3);
+      ctx.fill();
+      ctx.fillStyle = '#f0c040';
+      ctx.fillRect(i * w * 0.18 - w * 0.06, -h - h * 0.22, w * 0.12, 3);
+    }
+    // Fuse + spark.
+    ctx.strokeStyle = '#5a4a2a';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(0, -h - h * 0.34);
+    ctx.quadraticCurveTo(w * 0.16, -h - h * 0.52, w * 0.1, -h - h * 0.6);
+    ctx.stroke();
+    ctx.fillStyle = '#ffdd55';
+    ctx.beginPath();
+    ctx.arc(w * 0.1, -h - h * 0.6, 3, 0, Math.PI * 2);
+    ctx.fill();
+    // Label.
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold ' + Math.round(h * 0.26) + 'px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('TNT', 0, -h * 0.44);
+    ctx.textBaseline = 'alphabetic';
+  }
+
+  function drawBeehive(ctx, w, h, a, t) {
+    if (a >= 0) return; // knocked away — bees handled by particles
+    // Branch stub it hangs from.
+    ctx.strokeStyle = '#6a4a24';
+    ctx.lineWidth = 4;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.42, -h);
+    ctx.lineTo(w * 0.12, -h);
+    ctx.stroke();
+    // Skep body — stacked rounded tiers, wider toward the bottom.
+    const tiers = 4;
+    const th = h / (tiers + 1);
+    for (let i = 0; i < tiers; i++) {
+      const ty = -h + th * 0.6 + i * th;
+      const tw = w * (0.52 + i * 0.11);
+      ctx.fillStyle = i % 2 ? '#e0a83a' : '#f0c257';
+      roundedRect(ctx, -tw / 2, ty, tw, th * 1.15, th * 0.55);
+      ctx.fill();
+    }
+    // Entrance hole.
+    ctx.fillStyle = '#3a2a10';
+    ctx.beginPath();
+    ctx.ellipse(0, -th * 1.1, w * 0.12, th * 0.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // A couple of bees circling.
+    ctx.fillStyle = '#2a2a2a';
+    for (let i = 0; i < 2; i++) {
+      const ang = t * 3 + i * Math.PI;
+      const bx = Math.cos(ang) * w * 0.5;
+      const by = -h * 0.5 + Math.sin(ang) * h * 0.2;
+      ctx.beginPath();
+      ctx.arc(bx, by, 2.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
   }
 
   // Balloons manage their own transform: string down to the ground + bobbing.

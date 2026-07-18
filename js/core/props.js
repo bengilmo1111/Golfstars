@@ -105,15 +105,36 @@
       jackpot: true,
       float: 250
     },
-    // A wide, shallow hazard. Landing in it voids the shot (splash!). Non-scoring.
+    // A duck pond: the ball SKIPS off it (like a stone), ducks scatter, and you
+    // score — a fun beat instead of a dead stop. `skip` bounces the ball onward.
     water: {
-      label: 'Water Hazard',
-      points: 0,
+      label: 'Duck Pond',
+      points: 120,
       width: 240,
       height: 22,
       sound: 'splash',
-      reaction: 'splash',
-      hazard: true
+      reaction: 'skip',
+      pond: true,
+      skip: 0.5
+    },
+    // A crate that detonates when hit, area-smashing nearby props — chain it!
+    tnt: {
+      label: 'TNT Crate',
+      points: 130,
+      width: 64,
+      height: 60,
+      sound: 'explode',
+      reaction: 'blast',
+      blast: 150 // area-smash radius (world units)
+    },
+    // A beehive: whack it and the bees swarm out.
+    beehive: {
+      label: 'Beehive',
+      points: 170,
+      width: 56,
+      height: 72,
+      sound: 'buzz',
+      reaction: 'swarm'
     }
   };
 

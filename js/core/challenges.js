@@ -26,6 +26,14 @@
       label: 'Bag a runaway creature',
       test: (s) => (s.typeHits.movingcreature || 0) >= 1
     },
+    pond: {
+      label: 'Skip across a duck pond',
+      test: (s) => (s.typeHits.water || 0) >= 1
+    },
+    tnt: {
+      label: 'Blow up a TNT crate',
+      test: (s) => (s.typeHits.tnt || 0) >= 1
+    },
     nosplash: {
       label: 'Finish with no splashes',
       test: (s) => !s.splashed

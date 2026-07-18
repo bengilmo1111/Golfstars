@@ -3,6 +3,7 @@ const test = require('node:test');
 const assert = require('node:assert');
 const Levels = require('../../js/core/levels.js');
 const Props = require('../../js/core/props.js');
+const Challenges = require('../../js/core/challenges.js');
 
 test('v1 ships at least the PRD-scoped 3-5 levels', () => {
   assert.ok(Levels.LEVELS.length >= 3 && Levels.LEVELS.length <= 6);
@@ -20,6 +21,14 @@ test('levels are well-formed and reference real prop types', () => {
     for (const p of lvl.props) {
       assert.ok(Props.getPropType(p.type), lvl.id + ' has unknown prop: ' + p.type);
       assert.ok(p.x > 0 && p.x <= lvl.length, lvl.id + ' prop ' + p.type + ' is within the range');
+    }
+  }
+});
+
+test('every level challenge references a real challenge id', () => {
+  for (const lvl of Levels.LEVELS) {
+    for (const ch of lvl.challenges || []) {
+      assert.ok(Challenges.get(ch.id), lvl.id + ' references unknown challenge: ' + ch.id);
     }
   }
 });
