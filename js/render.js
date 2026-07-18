@@ -1,5 +1,6 @@
 /**
- * Render — all drawing is procedural on a 2D canvas (no image assets).
+ * Render — gameplay drawing is procedural on a 2D canvas, over optional
+ * illustrated level backgrounds.
  * The game loop builds a `view` transform (world -> screen) and hands the world
  * state to these helpers. Style: chunky shapes, squash-and-stretch, cartoon.
  * Browser-only.

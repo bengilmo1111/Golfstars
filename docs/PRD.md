@@ -53,7 +53,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 ## 8. Platform
 - Web-based, mobile-first responsive design
 - HTML5 / JS Canvas, no build step, no backend
-- Self-contained: optional manually supplied illustrated WebP background images with procedural gradient fallbacks; all characters, props, HUD, effects, and Web Audio SFX remain procedural
+- Self-contained: bundled illustrated WebP background images with procedural gradient fallbacks; all characters, props, HUD, effects, and Web Audio SFX remain procedural
 
 ### 8a. Character Concepts (original — round/blobby direction)
 Keeping clear water between this and existing IP: different silhouette, colour, and feature set, distinct name/lore. The cast is one species/design family with distinct colours and personalities.
