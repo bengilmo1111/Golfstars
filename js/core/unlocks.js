@@ -54,15 +54,36 @@
       // explodeRadius is read by the engine to area-smash props on first hit.
       physics: {},
       explodeRadius: 150
+    },
+    {
+      id: 'rocket',
+      name: 'Rocket Ball',
+      threshold: 3600,
+      radius: 15,
+      color: '#5b8cff',
+      blurb: 'Low gravity — screaming distance.',
+      physics: { gravity: 1050, airDrag: 0.0004 }
+    },
+    {
+      id: 'feather',
+      name: 'Feather Ball',
+      threshold: 4600,
+      radius: 16,
+      color: '#eaf3ff',
+      blurb: 'Floats forever — reach the high stuff.',
+      physics: { gravity: 780, airDrag: 0.0024, groundFriction: 0.6 }
     }
   ];
 
+  // `loft` biases launch angle (>1 pops the ball higher for less distance;
+  // <1 flattens it for more carry). Defaults to 1 when absent.
   const CLUBS = [
     {
       id: 'starter',
       name: 'Starter Club',
       threshold: 0,
       power: 3.2,
+      loft: 1,
       blurb: 'Trusty first swing.'
     },
     {
@@ -70,7 +91,24 @@
       name: 'Big Bertha',
       threshold: 700,
       power: 4.0,
+      loft: 1,
       blurb: 'More power, more distance.'
+    },
+    {
+      id: 'lobwedge',
+      name: 'Lob Wedge',
+      threshold: 1400,
+      power: 3.2,
+      loft: 1.35,
+      blurb: 'High pop — perfect for balloons and clearing ponds.'
+    },
+    {
+      id: 'driver',
+      name: 'Power Driver',
+      threshold: 2200,
+      power: 4.6,
+      loft: 0.9,
+      blurb: 'Flat and ferocious. Maximum carry.'
     }
   ];
 

@@ -48,9 +48,19 @@ test('new target types carry their behavior flags', () => {
   assert.ok(bal.float > 100, 'balloon floats high');
   assert.ok(bal.points >= 300, 'balloon is a jackpot');
 
-  const water = Props.getPropType('water');
-  assert.strictEqual(water.hazard, true);
-  assert.strictEqual(Props.propPoints('water'), 0);
+  // The pond is now a fun scoring skip target, not a dead-stop hazard.
+  const pond = Props.getPropType('water');
+  assert.strictEqual(pond.pond, true);
+  assert.ok(pond.skip > 0, 'pond skips the ball onward');
+  assert.ok(Props.propPoints('water') > 0, 'pond scores');
+
+  const tnt = Props.getPropType('tnt');
+  assert.ok(tnt.blast > 0, 'TNT has a blast radius');
+  assert.ok(tnt.points > 0);
+
+  const hive = Props.getPropType('beehive');
+  assert.strictEqual(hive.reaction, 'swarm');
+  assert.ok(hive.points > 0);
 });
 
 test('a floating balloon is only hit when the ball reaches its height', () => {

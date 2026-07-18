@@ -36,16 +36,18 @@ voices, and a light background music loop. Audio unlocks on your first tap/click
    at the live multiplier. Trampolines keep the chain alive; distance is a
    small bonus.
 4. Watch the **wind** arrow on breezy ranges, and use the **spin** control
-   (Back / None / Top) — backspin checks the ball up short of the **water
-   hazard**, topspin rolls it out for distance. Loft a shot to pop the
+   (Back / None / Top) — backspin checks the ball up, topspin rolls it out for
+   distance. Skip the ball across a **duck pond** to scatter ducks for points,
+   chain-detonate **TNT crates**, whack a **beehive**, loft a shot to pop the
    high-floating **jackpot balloon**, and time your swing for the **runaway
    creature** that patrols back and forth.
 5. You get a set number of shots per range. Beat your best score to earn up
    to **3 stars**, and tick off each range's **challenges** ("chain a 3-hit
-   combo", "pop a jackpot balloon", "no splashes", …). Earning a star unlocks
-   the **next range**.
+   combo", "pop a jackpot balloon", "skip a duck pond", …). Earning a star
+   unlocks the **next range**.
 6. Points add to your **career score**, which unlocks new balls (bouncy,
-   boomerang, beach ball, exploding) and clubs.
+   boomerang, beach ball, exploding, rocket, feather) and clubs (Big Bertha,
+   Lob Wedge, Power Driver).
 
 Progress (best scores, career score, unlocks, selections) is saved locally in
 the browser — no accounts.

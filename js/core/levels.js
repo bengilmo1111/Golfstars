@@ -17,7 +17,7 @@
       length: 2600, // downrange world length
       wind: 0,
       stars: [500, 1000, 1700], // bronze / silver / gold score thresholds
-      challenges: [{ id: 'combo3' }, { id: 'balloon' }, { id: 'nosplash' }],
+      challenges: [{ id: 'combo3' }, { id: 'balloon' }, { id: 'pond' }],
       sky: ['#8fd6ff', '#d7f2ff'],
       ground: '#6fca5a',
       props: [
@@ -66,7 +66,7 @@
       length: 3400,
       wind: -200, // tricky headwind
       stars: [900, 1700, 2600],
-      challenges: [{ id: 'combo5' }, { id: 'balloon' }, { id: 'nosplash' }],
+      challenges: [{ id: 'combo5' }, { id: 'balloon' }, { id: 'pond' }],
       sky: ['#b48cff', '#ffd0f0'],
       ground: '#3fa578', // deeper dusk green
       props: [
@@ -113,6 +113,57 @@
         { type: 'portaloo', x: 3100 },
         { type: 'picnic', x: 3400 },
         { type: 'movingcreature', x: 3600 }
+      ]
+    },
+    {
+      id: 'windy-cliffs',
+      name: 'Windy Cliffs',
+      shots: 6,
+      length: 3400,
+      wind: -320, // strong headwind — pack a Power Driver
+      stars: [1100, 2000, 3000],
+      challenges: [{ id: 'tnt' }, { id: 'bigdrive', param: 1400 }, { id: 'balloon' }],
+      sky: ['#7fb0d9', '#cfe6f2'],
+      ground: '#5aa06a',
+      props: [
+        { type: 'tnt', x: 500 },
+        { type: 'buckets', x: 720 },
+        { type: 'beehive', x: 950 },
+        { type: 'trampoline', x: 1150 },
+        { type: 'balloon', x: 1300 },
+        { type: 'tnt', x: 1600 },
+        { type: 'golfcart', x: 1820 },
+        { type: 'scarecrow', x: 2100 },
+        { type: 'water', x: 2400 },
+        { type: 'movingcreature', x: 2700 },
+        { type: 'beehive', x: 2950 },
+        { type: 'portaloo', x: 3200 }
+      ]
+    },
+    {
+      id: 'duck-derby',
+      name: 'Duck Derby',
+      shots: 6,
+      length: 3600,
+      wind: 120,
+      stars: [1200, 2200, 3200],
+      challenges: [{ id: 'pond' }, { id: 'moving' }, { id: 'combo5' }],
+      sky: ['#8fe0d0', '#e0fff7'],
+      ground: '#57b98a',
+      props: [
+        { type: 'water', x: 520 },
+        { type: 'buckets', x: 760 },
+        { type: 'water', x: 1000 },
+        { type: 'movingcreature', x: 1250 },
+        { type: 'trampoline', x: 1500 },
+        { type: 'balloon', x: 1650 },
+        { type: 'water', x: 1950 },
+        { type: 'golfcart', x: 2200 },
+        { type: 'beehive', x: 2450 },
+        { type: 'water', x: 2700 },
+        { type: 'movingcreature', x: 2950 },
+        { type: 'tnt', x: 3200 },
+        { type: 'picnic', x: 3450 }
       ]
     }
   ];

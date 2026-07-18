@@ -52,3 +52,9 @@ test('getBall/getClub fall back to the default for unknown ids', () => {
   assert.strictEqual(Unlocks.getBall('nope').id, 'standard');
   assert.strictEqual(Unlocks.getClub('nope').id, 'starter');
 });
+
+test('clubs expose power and a loft bias (high pop vs flat carry)', () => {
+  for (const c of Unlocks.CLUBS) assert.ok(c.power > 0, c.id + ' needs power');
+  assert.ok(Unlocks.getClub('lobwedge').loft > 1, 'lob wedge pops higher');
+  assert.ok(Unlocks.getClub('driver').loft < 1, 'driver flattens the shot');
+});

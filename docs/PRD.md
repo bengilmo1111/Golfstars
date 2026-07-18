@@ -35,7 +35,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 - **Game feel / juice:** screen shake, a brief hit-stop freeze and camera punch on contact, slow-motion on big combos (and a bigger one on the exploding ball), full-screen flashes, a popping combo meter, and dust puffs on landing — tuned so hits feel weighty without being nauseating
 
 ### 6a. V1 Scope
-- 4 levels/scenes for launch, each with its own layout and funny-target set
+- 6 levels/scenes, each with its own layout and funny-target set (4 with illustrated backgrounds, 2 newer ranges on the procedural gradient until art is added)
 - Simple local leaderboard (best score per device, no accounts/backend)
 - Voiced creatures — gibberish/character voice lines reacting to hits/misses
 - Landscape-first (fills the viewport to show more of the course down-range); still playable in portrait with a nudge to rotate
@@ -71,7 +71,9 @@ Keeping clear water between this and existing IP: different silhouette, colour, 
 - Trampoline prop that bounces the ball for a bonus multiplier
 - **Runaway creature** — a target that patrols left/right (a timing challenge)
 - **Jackpot balloon** — a high-floating, high-value target you must loft a shot to reach
-- **Water hazard** — landing in it voids the shot with a comedic splash (risk/reward)
+- **Duck pond** — the ball skips off it like a stone, ducks scatter, and you score — a fun beat that keeps momentum (no dead stops)
+- **TNT crate** — detonates when hit and area-smashes nearby props (chain reactions!)
+- **Beehive** — whack it and the bees swarm out
 
 ## 9. Controls
 - **Aim & power:** Touch/click and drag back from the ball (slingshot). The drag vector sets angle and power. Release to fire.
@@ -87,8 +89,8 @@ Keeping clear water between this and existing IP: different silhouette, colour, 
 
 ## 11. Rewards / Unlocks
 Unlocked by reaching cumulative-score milestones, persisted locally:
-- **Balls:** Standard, Bouncy (extra bounces), Boomerang (curves back), Exploding (area smash), Beach Ball (giant, floaty)
-- **Clubs:** Starter, Big Bertha (more power)
+- **Balls:** Standard, Bouncy (extra bounces), Boomerang (curves back), Beach Ball (giant, floaty), Exploding (area smash), Rocket (low gravity, big distance), Feather (super floaty, long hang)
+- **Clubs:** Starter, Big Bertha (more power), Lob Wedge (high loft — pop over hazards / reach balloons), Power Driver (flat, maximum carry). `loft` biases launch angle for genuine club variety.
 
 ## 12. Success Metrics (draft)
 - Session length, replay rate, shots per session (instrumentable later; not tracked in v1)

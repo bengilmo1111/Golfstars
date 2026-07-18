@@ -66,6 +66,14 @@ test('label renders fixed and templated challenge text', () => {
   assert.match(Challenges.label({ id: 'bigdrive' }), /\d+m/);
 });
 
+test('pond and tnt challenges read the right type hits', () => {
+  const stats = { score: 0, bestCombo: 0, maxDistance: 0, splashed: false, typeHits: { water: 2, tnt: 1 } };
+  const done = Challenges.evaluate([{ id: 'pond' }, { id: 'tnt' }, { id: 'moving' }], stats);
+  assert.ok(done.includes('pond'));
+  assert.ok(done.includes('tnt'));
+  assert.ok(!done.includes('moving'));
+});
+
 test('unknown challenge ids are ignored, not thrown', () => {
   assert.deepStrictEqual(Challenges.evaluate([{ id: 'nope' }], { score: 999, typeHits: {} }), []);
   assert.strictEqual(Challenges.label({ id: 'nope' }), 'nope');

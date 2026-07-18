@@ -216,9 +216,25 @@
     e.preventDefault();
   }
 
-  function updateAimVelocity() {
+  // Convert a drag into a launch velocity, applying the club's power and loft.
+  function launchVelocity(dragX, dragY) {
     const power = state.clubDef.power * 3;
-    const v = Physics.launchFromDrag(state.aim.dragX, state.aim.dragY, power, 2600);
+    const v = Physics.launchFromDrag(dragX, dragY, power, 2600);
+    const loft = state.clubDef.loft || 1;
+    if (loft !== 1) {
+      v.vy *= loft;
+      const sp = Math.hypot(v.vx, v.vy);
+      if (sp > 2600) {
+        const k = 2600 / sp;
+        v.vx *= k;
+        v.vy *= k;
+      }
+    }
+    return v;
+  }
+
+  function updateAimVelocity() {
+    const v = launchVelocity(state.aim.dragX, state.aim.dragY);
     state.aim.vx = v.vx;
     state.aim.vy = v.vy;
     state.aim.traj = Physics.predictTrajectory(
@@ -309,20 +325,27 @@
         continue;
       }
 
-      // Water hazard: getting caught voids the shot.
-      if (def.hazard) {
-        if (!state.round.voided && Props.hitsProp(ball.x, ball.y, ball.radius, prop)) {
-          state.round.voidShot();
-          ball.vx = 0;
-          ball.vy = 0;
-          ball.resting = true;
+      // Duck pond: the ball SKIPS off it (once for points), ducks scatter.
+      if (def.pond) {
+        if (!prop.hit && Props.hitsProp(ball.x, ball.y, ball.radius, prop) && ball.vy < 60) {
+          const res = state.round.registerHit('water');
+          prop.hit = true;
           prop.hitT = 0;
+          // Skim the ball onward instead of stopping it dead.
+          ball.vy = Math.abs(ball.vy) * def.skip + 150;
+          ball.vx *= 0.92;
           Audio.play('splash');
+          Audio.play('quack');
+          if (res.combo >= 2) Audio.play('combo');
           spawnSplash(ball.x);
-          spawnFloater(ball.x, def.height + 20, 'SPLASH!', '#7ad0ff');
-          fxShake(8);
-          fxFlash(0.18, '#7ad0ff');
-          fxHitstop(0.05);
+          spawnDuckScatter(prop.x);
+          if (res.awarded > 0) {
+            const label = '+' + res.awarded + (res.multiplier > 1 ? ' x' + res.multiplier.toFixed(1) : '');
+            spawnFloater(prop.x, def.height + 22, label, '#7ad0ff');
+          }
+          fxShake(6);
+          fxFlash(0.12, '#7ad0ff');
+          fxHitstop(0.03);
         }
         continue;
       }
@@ -330,7 +353,7 @@
       if (prop.hit) continue;
       if (Props.hitsProp(ball.x, ball.y, ball.radius, prop)) {
         smashProp(prop);
-        // Exploding ball area-smash.
+        // Exploding ball area-smash on first contact.
         if (state.ballDef.explodeRadius) {
           Audio.play('explode');
           spawnExplosion(ball.x, ball.y);
@@ -338,13 +361,29 @@
           fxFlash(0.35, '#fff');
           fxHitstop(0.07);
           fxSlowmo(0.35, 0.18);
-          for (const other of state.props) {
-            if (other === prop || other.hit || other.type === 'trampoline') continue;
-            const d = Math.hypot(other.x - ball.x, Props.getPropType(other.type).height / 2 - ball.y);
-            if (d <= state.ballDef.explodeRadius) smashProp(other);
-          }
+          areaSmash(ball.x, ball.y, state.ballDef.explodeRadius, prop);
+        }
+        // TNT crate detonates and takes out its neighbours.
+        if (def.blast) {
+          spawnExplosion(prop.x, def.height * 0.5);
+          fxShake(18);
+          fxFlash(0.32, '#ffcaa0');
+          fxHitstop(0.06);
+          fxSlowmo(0.4, 0.16);
+          areaSmash(prop.x, def.height * 0.5, def.blast, prop);
         }
       }
+    }
+  }
+
+  // Smash every un-hit scoring prop within `radius` of (cx, cy).
+  function areaSmash(cx, cy, radius, exclude) {
+    for (const other of state.props) {
+      if (other === exclude || other.hit) continue;
+      const od = Props.getPropType(other.type);
+      if (!od || other.type === 'trampoline' || od.pond) continue;
+      const d = Math.hypot(other.x - cx, (od.jackpot ? other.y : od.height / 2) - cy);
+      if (d <= radius) smashProp(other);
     }
   }
 
@@ -357,6 +396,7 @@
     if (def.voice && state.character) Audio.voice(state.character.voicePitch + 60, 'hurt');
     const burstY = def.jackpot ? prop.y + def.height * 0.5 : def.height * 0.6;
     spawnBurst(prop.x, burstY, def.jackpot ? 20 : 12);
+    if (def.reaction === 'swarm') spawnSwarm(prop.x, def.height * 0.7);
     if (res.awarded > 0) {
       const label = '+' + res.awarded + (res.multiplier > 1 ? ' x' + res.multiplier.toFixed(1) : '');
       const y = (def.jackpot ? prop.y + def.height : def.height) + 10;
@@ -400,6 +440,39 @@
         life: 0.8,
         maxLife: 0.8,
         color: ['#7ad0ff', '#bfeaff', '#fff'][i % 3]
+      });
+    }
+  }
+
+  function spawnDuckScatter(x) {
+    for (let i = 0; i < 6; i++) {
+      const dir = i % 2 ? 1 : -1;
+      state.particles.push({
+        x: x + (Math.random() - 0.5) * 40,
+        y: 10,
+        vx: dir * (60 + Math.random() * 120),
+        vy: 120 + Math.random() * 120,
+        r: 4 + Math.random() * 2,
+        life: 1,
+        maxLife: 1,
+        color: '#ffd23f' // little yellow ducklings
+      });
+    }
+  }
+
+  function spawnSwarm(x, y) {
+    for (let i = 0; i < 14; i++) {
+      const a = Math.random() * Math.PI * 2;
+      const sp = 60 + Math.random() * 150;
+      state.particles.push({
+        x,
+        y,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp + 40,
+        r: 2 + Math.random() * 1.5,
+        life: 0.9,
+        maxLife: 0.9,
+        color: i % 2 ? '#2a2a2a' : '#ffd23f' // buzzing bees
       });
     }
   }
@@ -1040,8 +1113,7 @@
     },
     // Aim helper: drag deltas in screen px (down/left = pull back).
     aimAndFire(dragX, dragY) {
-      const power = state.clubDef.power * 3;
-      const v = Physics.launchFromDrag(dragX, dragY, power, 2600);
+      const v = launchVelocity(dragX, dragY);
       return fireShot(v.vx, v.vy);
     },
     resetSave() {

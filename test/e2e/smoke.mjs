@@ -52,12 +52,20 @@ async function main() {
 
     await page.goto('http://localhost:' + port + '/');
 
+    // Levels that ship an illustrated background; others use the procedural
+    // gradient fallback and must NOT claim a loaded image.
+    const ART_LEVELS = ['sunny-range', 'sunset-hills', 'chaos-carnival', 'moonlight-madness'];
+
     // 1. The game boots and exposes its API on the title screen.
     await page.waitForFunction(() => window.GS && window.GS.game && window.GS.game.getState);
-    await page.waitForFunction((missing) => window.GS.Levels.LEVELS.every((level) => {
-      const status = window.GS.Images.status['bg-' + level.id];
-      return level.id === missing ? status === 'error' : status === 'ready';
-    }), expectedMissingBg);
+    await page.waitForFunction(
+      (data) =>
+        data.art.every((id) => {
+          const status = window.GS.Images.status['bg-' + id];
+          return id === data.missing ? status === 'error' : status === 'ready';
+        }),
+      { art: ART_LEVELS, missing: expectedMissingBg }
+    );
 
     const art = await page.evaluate(async (missing) => {
       const sample = (ctx, width, height) => {
@@ -107,9 +115,13 @@ async function main() {
 
     assert.match(art.titleBackground, /title-bg\.webp/i, 'title screen should reference its illustrated background');
     assert.deepStrictEqual([art.title.width, art.title.height], [1920, 1080], 'title background dimensions');
+    const artSet = new Set(ART_LEVELS);
     for (const level of art.levels) {
       assert.strictEqual(level.groundOpaque, true, level.id + ' ground should draw over the background');
-      if (level.id === expectedMissingBg) {
+      if (!artSet.has(level.id)) {
+        // Range without shipped art — must fall back, not claim a loaded image.
+        assert.notStrictEqual(level.status, 'ready', level.id + ' has no art; should use the fallback');
+      } else if (level.id === expectedMissingBg) {
         assert.strictEqual(level.status, 'error', level.id + ' should exercise the procedural fallback');
       } else {
         assert.strictEqual(level.status, 'ready', level.id + ' background should load');
