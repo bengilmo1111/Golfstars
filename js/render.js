@@ -667,9 +667,14 @@
     return t * t * (3 - 2 * t);
   }
 
-  // Golf-swing club angle (radians, screen space) from swing state.
+  // Golf-swing club angle (radians, screen space; the clubhead sits at
+  // grip + (cos, sin) * length, with +x right and +y down). The ball launches
+  // to the RIGHT, so the club must sweep down through the ball moving rightward:
+  // wind up over the shoulder (up-left), swing down to the ball (near straight
+  // down, decreasing angle so the head moves right at contact), then follow
+  // through up to the front-right.
   // Timeline after release: backswing -> impact (IMPACT_T) -> follow-through.
-  const SWING = { IDLE: 0.7, WINDUP: -2.3, IMPACT: 0.7, FOLLOW: -1.15, IMPACT_T: 0.12, DUR: 0.5 };
+  const SWING = { IDLE: 1.2, WINDUP: 3.9, IMPACT: 1.55, FOLLOW: -0.6, IMPACT_T: 0.12, DUR: 0.5 };
   function swingClubAngle(swingT, aiming, power) {
     const S = SWING;
     if (aiming) {
