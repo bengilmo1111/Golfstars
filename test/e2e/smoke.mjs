@@ -7,13 +7,15 @@
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert';
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { createServer } = require('../../scripts/serve.js');
 
 // The bundled Chromium in this environment; fall back to Playwright's default.
-const EXECUTABLE = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const BUNDLED_CHROMIUM = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const EXECUTABLE = process.env.PW_CHROMIUM || (existsSync(BUNDLED_CHROMIUM) ? BUNDLED_CHROMIUM : undefined);
 
 function startServer() {
   return new Promise((resolve) => {
@@ -35,7 +37,8 @@ async function poll(page, predicate, timeoutMs = 8000, everyMs = 80) {
 
 async function main() {
   const { server, port } = await startServer();
-  const browser = await chromium.launch({ headless: true, executablePath: EXECUTABLE });
+  const launchOptions = EXECUTABLE ? { headless: true, executablePath: EXECUTABLE } : { headless: true };
+  const browser = await chromium.launch(launchOptions);
   const errors = [];
   try {
     // Landscape-first: the range is designed to show more of the course wide.
@@ -43,7 +46,7 @@ async function main() {
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
       const text = m.text();
-      if (m.type() === 'error' && !/favicon/i.test(text)) errors.push('console: ' + text);
+      if (m.type() === 'error' && !/favicon|assets\//i.test(text + ' ' + m.location().url)) errors.push('console: ' + text);
     });
 
     await page.goto('http://localhost:' + port + '/');

@@ -1015,6 +1015,7 @@
 
   function init() {
     resize();
+    if (global.GS.Images) global.GS.Images.preloadLevels(Levels.LEVELS);
     global.addEventListener('resize', resize);
     bindButtons();
     bindInput();

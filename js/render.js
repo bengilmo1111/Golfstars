@@ -15,12 +15,21 @@
 
   // ---------- Background ----------
   function drawBackground(ctx, W, H, view, level, t) {
+    // Base gradient — always drawn, so a missing/loading image degrades gracefully.
     const g = ctx.createLinearGradient(0, 0, 0, H);
     g.addColorStop(0, level.sky[0]);
     g.addColorStop(1, level.sky[1]);
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, W, H);
 
+    const Images = global.GS.Images;
+    const bg = Images ? Images.get('bg-' + level.id) : null;
+    if (bg) {
+      drawParallaxImage(ctx, W, H, view.camX, bg);
+      return; // the illustration already includes sky, clouds and distant scenery
+    }
+
+    // ---- Procedural fallback (the existing hills + clouds code stays here) ----
     // Parallax hills.
     const camX = view.camX;
     ctx.fillStyle = 'rgba(255,255,255,0.12)';
@@ -46,6 +55,17 @@
       const cy = 60 + (i % 3) * 40;
       cloud(ctx, cx, cy, 26 + (i % 2) * 8);
     }
+  }
+
+  // Cover-scale to height and tile horizontally with slow parallax (invisible seam
+  // requires uniform sky at the image's left/right edges).
+  function drawParallaxImage(ctx, W, H, camX, img) {
+    const scale = H / img.height;
+    const dw = img.width * scale;
+    const parallax = 0.25; // 0 = static, 1 = moves with camera
+    let offset = -((camX * parallax) % dw);
+    if (offset > 0) offset -= dw;
+    for (let x = offset; x < W; x += dw) ctx.drawImage(img, x, 0, dw, H);
   }
 
   function cloud(ctx, x, y, r) {
