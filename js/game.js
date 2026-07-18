@@ -6,7 +6,7 @@
 (function (global) {
   'use strict';
 
-  const { Physics, Scoring, Props, Levels, Characters, Unlocks, Storage, Render, Audio } = global.GS;
+  const { Physics, Scoring, Props, Levels, Characters, Unlocks, Storage, Render, Audio, Challenges } = global.GS;
 
   const storage = Storage.createStorage();
 
@@ -519,23 +519,53 @@
   function finishRound() {
     state.phase = 'over';
     const score = state.round.total;
-    const { isBest, prevCareer, state: save } = storage.recordRound(state.level.id, score);
-    state.save = save;
-    const gained = Unlocks.newlyUnlocked(prevCareer, save.careerScore);
+    const stats = Challenges.statsFromRound(state.round);
+    const completed = Challenges.evaluate(state.level.challenges, stats);
+    const prevStars = Levels.levelStars(state.level, storage.getBest(state.level.id));
+    const rec = storage.recordRound(state.level.id, score, completed);
+    state.save = rec.state;
+    const gained = Unlocks.newlyUnlocked(rec.prevCareer, rec.state.careerScore);
+    const stars = Levels.levelStars(state.level, storage.getBest(state.level.id));
     Audio.play('cheer');
-    renderResults(score, isBest, gained);
+    renderResults(score, rec.isBest, gained, stars, prevStars, rec.newChallenges);
     showScreen('results');
   }
 
-  function renderResults(score, isBest, gained) {
+  function renderResults(score, isBest, gained, stars, prevStars, newChallenges) {
     $('#result-level').textContent = state.level.name;
     $('#result-score').textContent = score;
     $('#result-best').textContent = storage.getBest(state.level.id);
     $('#result-bestflag').style.display = isBest ? 'inline' : 'none';
+
+    // Star rating (filled up to `stars`, with the newly-earned ones popping).
+    const starsEl = $('#result-stars');
+    starsEl.innerHTML = '';
+    for (let i = 0; i < 3; i++) {
+      const span = document.createElement('span');
+      const earned = i < stars;
+      span.className = 'star' + (earned ? ' earned' : '') + (earned && i >= prevStars ? ' pop' : '');
+      span.textContent = earned ? '★' : '☆';
+      starsEl.appendChild(span);
+    }
+
     const comboEl = $('#result-combo');
     if (comboEl) {
       comboEl.textContent = state.round.bestCombo >= 2 ? '🔥 Best combo: x' + state.round.bestCombo : '';
     }
+
+    // Challenge checklist for this level.
+    const chEl = $('#result-challenges');
+    chEl.innerHTML = '';
+    const done = storage.getChallenges(state.level.id);
+    (state.level.challenges || []).forEach((ch) => {
+      const li = document.createElement('li');
+      const isDone = !!done[ch.id];
+      const isNew = (newChallenges || []).indexOf(ch.id) >= 0;
+      li.className = 'challenge' + (isDone ? ' done' : '') + (isNew ? ' just' : '');
+      li.textContent = (isDone ? '✓ ' : '○ ') + Challenges.label(ch) + (isNew ? '  NEW!' : '');
+      chEl.appendChild(li);
+    });
+
     const shotsEl = $('#result-shots');
     shotsEl.innerHTML = '';
     state.round.shots.forEach((s, i) => {
@@ -547,6 +577,7 @@
         ' — ' + s.distance + 'm';
       shotsEl.appendChild(li);
     });
+
     const unlockEl = $('#result-unlocks');
     unlockEl.innerHTML = '';
     if (gained.length) {
@@ -560,8 +591,21 @@
     } else {
       $('#result-unlock-wrap').style.display = 'none';
     }
+
+    // Next level is only offered once it's unlocked (needs a star here).
     const nextIdx = state.levelIndex + 1;
-    $('#btn-next').style.display = Levels.getLevel(nextIdx) ? 'inline-block' : 'none';
+    const nextLevel = Levels.getLevel(nextIdx);
+    const nextUnlocked = nextLevel && Levels.isUnlocked(nextIdx, (id) => storage.getBest(id));
+    $('#btn-next').style.display = nextUnlocked ? 'inline-block' : 'none';
+    const hint = $('#result-nexthint');
+    if (hint) {
+      if (nextLevel && !nextUnlocked) {
+        hint.textContent = '🔒 Earn ⭐ (score ' + state.level.stars[0] + '+) to unlock ' + nextLevel.name;
+        hint.style.display = 'block';
+      } else {
+        hint.style.display = 'none';
+      }
+    }
   }
 
   // ---------- Character / Level / Garage screens ----------
@@ -637,22 +681,41 @@
     });
   }
 
+  function starString(n) {
+    return '★★★☆☆☆'.slice(3 - n, 6 - n);
+  }
+
   function buildLevelSelect() {
     state.save = storage.load();
+    const getBest = (id) => state.save.best[id] || 0;
     const wrap = $('#level-list');
     wrap.innerHTML = '';
     Levels.LEVELS.forEach((lvl, idx) => {
-      const best = state.save.best[lvl.id] || 0;
+      const best = getBest(lvl.id);
+      const stars = Levels.levelStars(lvl, best);
+      const unlocked = Levels.isUnlocked(idx, getBest);
+      const done = state.save.challenges[lvl.id] || {};
+      const doneCount = (lvl.challenges || []).filter((c) => done[c.id]).length;
+      const total = (lvl.challenges || []).length;
       const btn = document.createElement('button');
-      btn.className = 'card level-card';
-      btn.innerHTML =
-        '<div class="card-name">' + lvl.name + '</div>' +
-        '<div class="card-blurb">' + lvl.shots + ' shots · best ' + best + '</div>';
-      btn.onclick = () => {
-        Audio.unlock();
-        Audio.play('ui');
-        startLevel(idx);
-      };
+      btn.className = 'card level-card' + (unlocked ? '' : ' locked');
+      if (unlocked) {
+        btn.innerHTML =
+          '<div class="card-name">' + lvl.name + ' <span class="lvl-stars">' + starString(stars) + '</span></div>' +
+          '<div class="card-blurb">' + lvl.shots + ' shots · best ' + best +
+          ' · 🎯 ' + doneCount + '/' + total + '</div>';
+        btn.onclick = () => {
+          Audio.unlock();
+          Audio.play('ui');
+          startLevel(idx);
+        };
+      } else {
+        const prev = Levels.getLevel(idx - 1);
+        btn.innerHTML =
+          '<div class="card-name">🔒 ' + lvl.name + '</div>' +
+          '<div class="card-blurb">Earn ⭐ on ' + (prev ? prev.name : 'the previous range') + ' to unlock</div>';
+        btn.onclick = () => Audio.play('ui');
+      }
       wrap.appendChild(btn);
     });
   }
@@ -661,15 +724,22 @@
     state.save = storage.load();
     const wrap = $('#board-list');
     wrap.innerHTML = '';
+    let totalStars = 0;
     Levels.LEVELS.forEach((lvl) => {
+      const best = state.save.best[lvl.id] || 0;
+      const stars = Levels.levelStars(lvl, best);
+      totalStars += stars;
       const li = document.createElement('li');
-      li.innerHTML = '<span>' + lvl.name + '</span><b>' + (state.save.best[lvl.id] || 0) + '</b>';
+      li.innerHTML =
+        '<span>' + lvl.name + ' <span class="lvl-stars">' + starString(stars) + '</span></span>' +
+        '<b>' + best + '</b>';
       wrap.appendChild(li);
     });
     $('#board-career').textContent = state.save.careerScore;
     const ub = Unlocks.unlockedBalls(state.save.careerScore).length;
     const uc = Unlocks.unlockedClubs(state.save.careerScore).length;
-    $('#board-unlocks').textContent = ub + ' balls · ' + uc + ' clubs';
+    const maxStars = Levels.LEVELS.length * 3;
+    $('#board-unlocks').textContent = '⭐ ' + totalStars + '/' + maxStars + ' · ' + ub + ' balls · ' + uc + ' clubs';
   }
 
   // ---------- Loop ----------

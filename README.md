@@ -42,7 +42,10 @@ voices, and a light background music loop. Audio unlocks on your first tap/click
    hazard**, topspin rolls it out for distance. Loft a shot to pop the
    high-floating **jackpot balloon**, and time your swing for the **runaway
    creature** that patrols back and forth.
-5. You get a set number of shots per range. Beat your best score!
+5. You get a set number of shots per range. Beat your best score to earn up
+   to **3 stars**, and tick off each range's **challenges** ("chain a 3-hit
+   combo", "pop a jackpot balloon", "no splashes", …). Earning a star unlocks
+   the **next range**.
 6. Points add to your **career score**, which unlocks new balls (bouncy,
    boomerang, beach ball, exploding) and clubs.
 

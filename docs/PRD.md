@@ -39,6 +39,11 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 - Voiced creatures — gibberish/character voice lines reacting to hits/misses
 - Landscape-first (fills the viewport to show more of the course down-range); still playable in portrait with a nudge to rotate
 
+### 6b. Progression
+- **Star ratings:** each level has three score thresholds worth 1/2/3 stars, shown on the results screen (earned stars pop in) and the level list.
+- **Per-level challenges:** each range offers ~3 optional missions (e.g. "chain a 3-hit combo", "pop a jackpot balloon", "finish with no splashes", "drive it 1300m in one shot", "bag a runaway creature"). Completion is tracked and persisted per device; newly-completed ones are highlighted on the results screen.
+- **Sequential unlocking:** a range unlocks once the previous one has earned at least one star, giving a clear path to climb. Total stars are shown on the leaderboard.
+
 ## 7. Tone & Humour
 - Slapstick, exaggerated reactions, no meanness/gore
 - Visual comedy over text-based jokes (works across reading levels)
