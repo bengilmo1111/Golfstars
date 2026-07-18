@@ -199,3 +199,112 @@ gradient fallback**; everything else remains procedural.
 Work on a feature branch off `main`, commit the images + code together, open a PR
 into `main` (Vercel will redeploy). Keep the PR description factual about what
 changed.
+
+---
+
+## 7. Enhancement: a second (midground) parallax layer
+
+The single background above gives each range a look; adding a **nearer
+midground layer** that scrolls **faster** than the far sky gives real depth and
+a stronger sense of speed as the camera pans down-range. This is purely
+additive and **degrades gracefully**: if a midground image is missing, the range
+just shows the single-layer look from §1–3 (no change, no error).
+
+### 7a. Midground art direction
+- One transparent overlay **per range**: `assets/mg-<level-id>.webp`.
+- **Same canvas as the far layer: 1920×1080**, but a **transparent WebP/PNG
+  (alpha channel)** — paint scenery only in the **lower ~45%** and leave
+  everything above it fully transparent so the far sky/hills show through.
+- Content = **nearer, bolder scenery** that sits just beyond the fairway:
+  chunkier foreground hills, clusters of trees/bushes, and a level-flavoured
+  element or two. Use **aerial perspective** — this layer is a touch **larger,
+  darker and more saturated** than the far background so it reads as closer.
+- The scenery's **top edge must be an irregular silhouette** (hill/tree line)
+  fading to transparent — **no hard horizontal cut**.
+- **Do NOT paint the playable ground.** Keep the very bottom simple/low — the
+  game draws the ground strip over it, and the ball plays in front of this
+  layer.
+- Same **flat vector storybook style**, cohesive with the far layer. Keep the
+  **outer ~8% of the left/right edges empty/transparent** so it tiles
+  horizontally with an invisible seam (it's drawn with the same tiling as the
+  far layer, just faster).
+- Per-range flavour suggestions: Sunny Range — leafy green hills + a tree
+  cluster; Sunset Hills — silhouetted hills + a windmill; Chaos Carnival —
+  striped tent tops + bunting; Moonlight Madness — spooky bare trees + fence;
+  Windy Cliffs — rocky headland + wind-bent shrubs; Duck Derby — cattail reeds
+  + a little jetty.
+- **WebP with alpha, < ~180 KB each, sRGB.**
+
+### 7b. Midground assets
+| File | Range |
+|---|---|
+| `assets/mg-sunny-range.webp` | Sunny Range |
+| `assets/mg-sunset-hills.webp` | Sunset Hills |
+| `assets/mg-chaos-carnival.webp` | Chaos Carnival |
+| `assets/mg-moonlight-madness.webp` | Moonlight Madness |
+| `assets/mg-windy-cliffs.webp` | Windy Cliffs |
+| `assets/mg-duck-derby.webp` | Duck Derby |
+
+Append the shared style line from §1 to every prompt, and add: *"transparent
+background (PNG alpha), scenery only in the lower portion, irregular silhouette
+top edge fading to transparent, no ground, no characters."*
+
+### 7c. Code changes (incremental — build on §3)
+
+**`js/assets.js` — also preload the midground layer** (in `preloadLevels`):
+```js
+function preloadLevels(levels) {
+  levels.forEach(function (lvl) {
+    load('bg-' + lvl.id, 'assets/bg-' + lvl.id + '.webp');
+    load('mg-' + lvl.id, 'assets/mg-' + lvl.id + '.webp'); // add this line
+  });
+}
+```
+
+**`js/render.js` — parametrise the parallax and draw both layers.** Give
+`drawParallaxImage` a `parallax` argument, then in `drawBackground` draw the far
+layer slower and the midground faster (each independently optional):
+```js
+function drawParallaxImage(ctx, W, H, camX, img, parallax) {
+  const scale = H / img.height;
+  const dw = img.width * scale;
+  let offset = -((camX * parallax) % dw);
+  if (offset > 0) offset -= dw;
+  for (let x = offset; x < W; x += dw) ctx.drawImage(img, x, 0, dw, H);
+}
+
+function drawBackground(ctx, W, H, view, level, t) {
+  // Base gradient — always drawn (fallback).
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, level.sky[0]);
+  g.addColorStop(1, level.sky[1]);
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, W, H);
+
+  const Images = global.GS.Images;
+  const bg = Images ? Images.get('bg-' + level.id) : null;
+  const mg = Images ? Images.get('mg-' + level.id) : null;
+  if (bg) {
+    drawParallaxImage(ctx, W, H, view.camX, bg, 0.2);   // far: slow
+  } else {
+    /* ...existing procedural hills + clouds fallback... */
+  }
+  if (mg) {
+    drawParallaxImage(ctx, W, H, view.camX, mg, 0.55);  // near: faster = depth
+  }
+}
+```
+Notes: the far layer's parallax drops from `0.25` to `0.2` so the two layers
+separate more; the midground is a transparent overlay so it composes over
+either the far image **or** the procedural fallback. Missing `mg` ⇒ nothing
+drawn (current look).
+
+### 7d. Verification / acceptance (in addition to §4–5)
+- With midground images present: as the camera pans, the near scenery visibly
+  slides **faster** than the far sky (parallax depth), and its transparent top
+  lets the far layer show through — no hard seam.
+- Rename one `mg-*.webp`: that range falls back to the single-layer look with
+  **no error/crash**; restore it.
+- `npm test` and `npm run test:e2e` still pass. If the e2e asserts on the
+  midground, only require it for ranges that ship one (mirror the existing
+  art-level allowlist).
