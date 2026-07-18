@@ -37,7 +37,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 - 4 levels/scenes for launch, each with its own layout and funny-target set
 - Simple local leaderboard (best score per device, no accounts/backend)
 - Voiced creatures — gibberish/character voice lines reacting to hits/misses
-- Portrait orientation only (mobile-first, one-handed)
+- Landscape-first (fills the viewport to show more of the course down-range); still playable in portrait with a nudge to rotate
 
 ## 7. Tone & Humour
 - Slapstick, exaggerated reactions, no meanness/gore
@@ -84,7 +84,7 @@ Unlocked by reaching cumulative-score milestones, persisted locally:
 
 ## 13. Architecture (v1)
 - `index.html` — screens (title, character select, level select, play, results, leaderboard)
-- `css/style.css` — mobile-first portrait styling
+- `css/style.css` — mobile-first, landscape styling
 - `js/core/*.js` — environment-agnostic pure logic (physics, scoring, storage, levels, characters, props, unlocks). Loadable in the browser via `<script>` and in Node via `require` for tests.
 - `js/audio.js`, `js/render.js`, `js/game.js` — browser-only glue (Web Audio, canvas rendering, input + game loop)
 - `test/` — `node --test` unit tests over the core logic + a Playwright smoke test

@@ -23,8 +23,11 @@ npm run serve
 # 2. Or open index.html directly in a browser.
 ```
 
-Portrait phone/tablet is the target; on desktop the playfield is capped to a
-phone-width column.
+Landscape phone/tablet is the target — the range fills the viewport so you can
+see more of the course down-range. It still plays in portrait (with a nudge to
+rotate). All sound is synthesised at runtime: punchy SFX, gibberish creature
+voices, and a light background music loop. Audio unlocks on your first tap/click
+(browsers require a gesture); the 🔊 button mutes everything.
 
 ### How to play
 1. Tap **Play**, pick a character (Henry, Casper, or Nina), choose your gear.
@@ -43,7 +46,7 @@ the browser — no accounts.
 
 ```
 index.html            screens + canvas
-css/style.css         mobile-first, portrait styling
+css/style.css         mobile-first, landscape styling
 js/core/*.js          pure, environment-agnostic game logic (unit-tested)
   ├─ characters.js    the selectable cast
   ├─ props.js         funny-target definitions + hit tests
@@ -52,7 +55,7 @@ js/core/*.js          pure, environment-agnostic game logic (unit-tested)
   ├─ scoring.js       combos + distance bonus
   ├─ unlocks.js       balls/clubs + thresholds
   └─ storage.js       localStorage-backed save (injectable backend)
-js/audio.js           Web Audio SFX + gibberish voices (browser only)
+js/audio.js           Web Audio SFX + gibberish voices + music (browser only)
 js/render.js          procedural canvas drawing (browser only)
 js/game.js            loop, camera, slingshot input, screen state machine
 test/unit/*.test.js   node:test unit tests over js/core
