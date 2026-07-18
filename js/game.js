@@ -113,6 +113,8 @@
     state.phase = 'ready';
     state.aim = null;
     state.flightTime = 0;
+    state.swingT = 0;
+    state.pendingShot = null;
   }
 
   // ---------- Input ----------
@@ -184,22 +186,35 @@
     return Object.assign({}, state.ballDef.physics);
   }
 
-  // Launch the current ball. Exposed for the smoke test.
+  // Impact happens partway through the swing so the club connects with the ball.
+  const IMPACT_T = 0.12;
+
+  // Begin a shot: the golfer swings, and the ball launches at impact (see
+  // launchPending). Exposed for the smoke test.
   function fireShot(vx, vy) {
     if (state.phase !== 'ready' && state.phase !== 'aiming') return false;
     if (state.shotsLeft <= 0) return false;
-    state.ball.vx = vx;
-    state.ball.vy = vy;
-    state.ball.resting = false;
-    state.phase = 'flight';
+    state.pendingShot = { vx, vy };
+    state.phase = 'windup';
     state.aim = null;
-    state.flightTime = 0;
-    state.shotStartX = state.ball.x;
-    state.round.startShot();
-    state.swingT = 0.001;
+    state.swingT = 0;
     Audio.play('swing');
     if (state.character) Audio.voice(state.character.voicePitch, 'happy');
     return true;
+  }
+
+  // Fired mid-swing: actually send the ball on its way.
+  function launchPending() {
+    const v = state.pendingShot || { vx: 0, vy: 0 };
+    state.ball.vx = v.vx;
+    state.ball.vy = v.vy;
+    state.ball.resting = false;
+    state.phase = 'flight';
+    state.flightTime = 0;
+    state.shotStartX = state.ball.x;
+    state.pendingShot = null;
+    state.round.startShot();
+    Audio.play('thwack');
   }
 
   // ---------- Collision + effects ----------
@@ -295,13 +310,20 @@
   // ---------- Update ----------
   const SUBSTEP = 1 / 120;
   function update(dt) {
-    if (state.swingT > 0) state.swingT += dt;
-    if (state.swingT > 0.6) state.swingT = 0;
+    // Advance the swing clock through the wind-up and flight.
+    if (state.phase === 'windup' || state.phase === 'flight' || state.phase === 'settling') {
+      state.swingT += dt;
+    }
 
     updateParticles(dt);
     updateFloaters(dt);
     for (const p of state.props) {
       if (p.hitT != null) p.hitT += dt;
+    }
+
+    // Mid-swing: release the ball at the moment of impact.
+    if (state.phase === 'windup' && state.swingT >= IMPACT_T) {
+      launchPending();
     }
 
     if (state.phase === 'flight') {
@@ -396,9 +418,13 @@
     Render.drawBackground(ctx, W, H, view, state.level, t);
     Render.drawGround(ctx, W, H, view, state.level);
     for (const prop of state.props) Render.drawProp(ctx, view, prop, t);
-    Render.drawTee(ctx, view, state.character, state.swingT);
+    Render.drawTee(ctx, view, state.character, {
+      swingT: state.swingT,
+      aiming: state.phase === 'aiming',
+      power: state.aim ? Math.min(1, Math.hypot(state.aim.dragX, state.aim.dragY) / 200) : 0
+    });
     Render.drawParticles(ctx, view, state.particles);
-    if (state.phase === 'ready' || state.phase === 'flight' || state.phase === 'settling') {
+    if (state.phase === 'ready' || state.phase === 'windup' || state.phase === 'flight' || state.phase === 'settling') {
       Render.drawBall(ctx, view, state.ball, state.ballDef, state.phase === 'flight' ? state.trail : null);
     }
     if (state.phase === 'aiming' && state.aim) {

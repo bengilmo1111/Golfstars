@@ -52,7 +52,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 ### 8a. Character Concepts (original — round/blobby direction)
 Keeping clear water between this and existing IP: different silhouette, colour, and feature set, distinct name/lore. The cast is one species/design family with distinct colours and personalities.
 
-**Selectable characters (v1):** Henry, Casper, and Nina — three named, selectable creatures. Player picks one at the start. Purely cosmetic — identical gameplay stats, different look/voice only.
+**Selectable characters (v1):** Henry, Casper, and Nina — three named, selectable creatures. Player picks one at the start. Purely cosmetic — identical gameplay stats, different look/voice only. Each is drawn full-body (round body + big eye, arms, legs, little feet) and holds a golf club that winds up as you drag to aim and swings through the ball on release, connecting at the moment of impact.
 
 ### 8b. Funny Target / Prop List (implemented in v1)
 - Creature standing next to a golf cart (launches with a "boing" and cartwheels off)

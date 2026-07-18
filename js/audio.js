@@ -178,6 +178,12 @@
       tone(90, 0.55, 'sawtooth', 0.35, 0, 36);
       tone(160, 0.4, 'square', 0.2, 0, 50);
     },
+    thwack() {
+      // Crisp club-on-ball impact.
+      noise(0.05, 0.5, 0, 5000, 'highpass');
+      tone(320, 0.09, 'square', 0.32, 0, 120);
+      tone(680, 0.05, 'sine', 0.16, 0, 240);
+    },
     land() {
       tone(120, 0.12, 'sine', 0.22, 0, 68);
       noise(0.08, 0.14, 0, 900);
