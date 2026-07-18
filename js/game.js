@@ -51,6 +51,49 @@
     worldTime: 0
   };
 
+  // ---------- Game feel / juice ----------
+  // Screen shake, hit-stop (brief freeze), slow-mo, camera punch, and flash.
+  const fx = {
+    shake: 0, // current shake magnitude (px)
+    flash: 0, // full-screen flash alpha 0..1
+    flashColor: '#fff',
+    timeScale: 1, // gameplay speed (slow-mo < 1)
+    slowmoTimer: 0,
+    slowmoScale: 1,
+    hitstop: 0, // seconds of full freeze remaining
+    zoom: 1, // camera punch multiplier
+    comboPulse: 0 // combo-meter pop 0..1
+  };
+  function fxShake(a) {
+    fx.shake = Math.min(24, Math.max(fx.shake, a));
+  }
+  function fxFlash(a, color) {
+    fx.flash = Math.max(fx.flash, a);
+    if (color) fx.flashColor = color;
+  }
+  function fxHitstop(s) {
+    fx.hitstop = Math.max(fx.hitstop, s);
+  }
+  function fxSlowmo(scale, dur) {
+    fx.slowmoScale = scale;
+    fx.slowmoTimer = Math.max(fx.slowmoTimer, dur);
+  }
+  function fxPunch(a) {
+    fx.zoom = Math.max(fx.zoom, 1 + a);
+  }
+  function updateFx(rdt) {
+    fx.shake = Math.max(0, fx.shake - rdt * (fx.shake * 9 + 16));
+    fx.flash = Math.max(0, fx.flash - rdt * 3);
+    fx.comboPulse = Math.max(0, fx.comboPulse - rdt * 4);
+    fx.zoom = fx.zoom + (1 - fx.zoom) * Math.min(1, rdt * 8);
+    if (fx.slowmoTimer > 0) {
+      fx.slowmoTimer -= rdt;
+      fx.timeScale = fx.slowmoTimer > 0 ? fx.slowmoScale : 1;
+    } else {
+      fx.timeScale = 1;
+    }
+  }
+
   let canvas, ctx, W, H, DPR;
 
   function resize() {
@@ -238,6 +281,10 @@
     state.pendingShot = null;
     state.round.startShot();
     Audio.play('thwack');
+    // A little kick on contact.
+    fxPunch(0.045);
+    fxShake(4);
+    spawnDust(state.ball.x);
   }
 
   // ---------- Collision + effects ----------
@@ -256,6 +303,8 @@
           state.round.registerHit('trampoline');
           Audio.play('sproing');
           spawnFloater(prop.x, def.height, 'BOING!', '#ff4d9d');
+          fxPunch(0.03);
+          fxShake(4);
         }
         continue;
       }
@@ -271,6 +320,9 @@
           Audio.play('splash');
           spawnSplash(ball.x);
           spawnFloater(ball.x, def.height + 20, 'SPLASH!', '#7ad0ff');
+          fxShake(8);
+          fxFlash(0.18, '#7ad0ff');
+          fxHitstop(0.05);
         }
         continue;
       }
@@ -282,6 +334,10 @@
         if (state.ballDef.explodeRadius) {
           Audio.play('explode');
           spawnExplosion(ball.x, ball.y);
+          fxShake(20);
+          fxFlash(0.35, '#fff');
+          fxHitstop(0.07);
+          fxSlowmo(0.35, 0.18);
           for (const other of state.props) {
             if (other === prop || other.hit || other.type === 'trampoline') continue;
             const d = Math.hypot(other.x - ball.x, Props.getPropType(other.type).height / 2 - ball.y);
@@ -298,8 +354,6 @@
     prop.hitT = 0;
     const res = state.round.registerHit(prop.type);
     Audio.play(def.sound);
-    // Extra sparkle as the live combo builds.
-    if (res.combo >= 2) Audio.play('combo');
     if (def.voice && state.character) Audio.voice(state.character.voicePitch + 60, 'hurt');
     const burstY = def.jackpot ? prop.y + def.height * 0.5 : def.height * 0.6;
     spawnBurst(prop.x, burstY, def.jackpot ? 20 : 12);
@@ -307,6 +361,29 @@
       const label = '+' + res.awarded + (res.multiplier > 1 ? ' x' + res.multiplier.toFixed(1) : '');
       const y = (def.jackpot ? prop.y + def.height : def.height) + 10;
       spawnFloater(prop.x, y, label, def.jackpot ? '#ffd23f' : '#ffe38a');
+    }
+
+    // ----- Juice -----
+    fx.comboPulse = 1;
+    fxHitstop(0.035);
+    fxShake(5 + Math.min(9, res.awarded / 60));
+    fxFlash(0.1, '#fff');
+    if (def.jackpot) {
+      // Balloon jackpot is a big moment.
+      Audio.play('combo');
+      fxShake(12);
+      fxFlash(0.22, '#ffd23f');
+      fxHitstop(0.06);
+    }
+    // Combo milestones get an escalating slow-mo + sparkle.
+    if (res.combo >= 2) Audio.play('combo');
+    if (res.combo === 3) {
+      fxSlowmo(0.4, 0.16);
+      fxFlash(0.14, '#ffe38a');
+    } else if (res.combo >= 5) {
+      fxSlowmo(0.3, 0.26);
+      fxShake(14);
+      fxFlash(0.24, '#ffe38a');
     }
   }
 
@@ -366,6 +443,23 @@
     }
   }
 
+  function spawnDust(x) {
+    for (let i = 0; i < 6; i++) {
+      const a = -Math.PI / 2 + (Math.random() - 0.5) * 1.8;
+      const sp = 30 + Math.random() * 70;
+      state.particles.push({
+        x,
+        y: 2,
+        vx: Math.cos(a) * sp,
+        vy: Math.abs(Math.sin(a) * sp) + 20,
+        r: 2 + Math.random() * 2,
+        life: 0.5,
+        maxLife: 0.5,
+        color: 'rgba(230,230,220,0.9)'
+      });
+    }
+  }
+
   // ---------- Update ----------
   const SUBSTEP = 1 / 120;
   function update(dt) {
@@ -400,7 +494,10 @@
         remaining -= step;
         const ev = Physics.stepBall(state.ball, step, ballPhysicsOpts());
         handleCollisions();
-        if (ev === 'bounce') Audio.play('land');
+        if (ev === 'bounce') {
+          Audio.play('land');
+          spawnDust(state.ball.x);
+        }
         if (ev === 'rest') break;
       }
       state.flightTime += dt;
@@ -482,6 +579,18 @@
   function draw(t) {
     if (!ctx) return;
     const view = makeView();
+
+    // The world is drawn inside a shake + camera-punch transform; the HUD-ish
+    // overlays (wind, combo meter, flash) sit outside it so they stay steady.
+    ctx.save();
+    if (fx.shake > 0.1) {
+      ctx.translate((Math.random() * 2 - 1) * fx.shake, (Math.random() * 2 - 1) * fx.shake);
+    }
+    if (fx.zoom !== 1) {
+      ctx.translate(W / 2, H / 2);
+      ctx.scale(fx.zoom, fx.zoom);
+      ctx.translate(-W / 2, -H / 2);
+    }
     Render.drawBackground(ctx, W, H, view, state.level, t);
     Render.drawGround(ctx, W, H, view, state.level);
     for (const prop of state.props) Render.drawProp(ctx, view, prop, t);
@@ -500,9 +609,20 @@
       Render.drawAim(ctx, view, bs, -state.aim.dragX, -state.aim.dragY, state.aim.traj);
     }
     Render.drawFloaters(ctx, view, state.floaters);
-    // On-screen depth UI: wind indicator + live combo meter.
+    ctx.restore();
+
+    // Full-screen flash (explosions, big combos, splashes).
+    if (fx.flash > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = Math.min(0.6, fx.flash);
+      ctx.fillStyle = fx.flashColor;
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+    }
+
+    // On-screen depth UI: wind indicator + live combo meter (steady, with pop).
     Render.drawWind(ctx, W, H, (state.level && state.level.wind) || 0);
-    Render.drawComboMeter(ctx, W, H, state.round);
+    Render.drawComboMeter(ctx, W, H, state.round, fx.comboPulse);
     // Score ticks up live as the combo scores during flight.
     if (state.round) $('#hud-score').textContent = state.round.total;
   }
@@ -746,11 +866,18 @@
   let lastT = 0;
   function loop(ts) {
     const t = ts / 1000;
-    let dt = lastT ? t - lastT : 0;
+    let rdt = lastT ? t - lastT : 0;
     lastT = t;
-    dt = Math.min(dt, 0.05); // clamp big frame gaps
+    rdt = Math.min(rdt, 0.05); // clamp big frame gaps
+    updateFx(rdt);
+    // Gameplay time: scaled for slow-mo, fully frozen during hit-stop.
+    let gdt = rdt * fx.timeScale;
+    if (fx.hitstop > 0) {
+      fx.hitstop -= rdt;
+      gdt = 0;
+    }
     if (state.screen === 'play') {
-      update(dt);
+      update(gdt);
       draw(t);
     }
     requestAnimationFrame(loop);

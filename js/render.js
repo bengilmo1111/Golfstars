@@ -705,16 +705,24 @@
     ctx.restore();
   }
 
-  // Live combo meter (top-centre) with a draining timer bar.
-  function drawComboMeter(ctx, W, H, round) {
+  // Live combo meter (top-centre) with a draining timer bar. `pulse` (0..1)
+  // pops the meter when the combo just increased.
+  function drawComboMeter(ctx, W, H, round, pulse) {
     if (!round || round.combo < 2) return;
     const mult = round.currentMultiplier();
     const frac = round.comboFraction();
     const w = 168;
     const h = 50;
+    const cx = W / 2;
+    const cy = 66 + h / 2;
+    ctx.save();
+    // Pop scale about the meter centre.
+    const scale = 1 + (pulse || 0) * 0.22;
+    ctx.translate(cx, cy);
+    ctx.scale(scale, scale);
+    ctx.translate(-cx, -cy);
     const x = W / 2 - w / 2;
     const y = 66;
-    ctx.save();
     roundedRect(ctx, x, y, w, h, 14);
     ctx.fillStyle = 'rgba(20,30,40,0.55)';
     ctx.fill();

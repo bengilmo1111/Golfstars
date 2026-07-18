@@ -32,6 +32,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 - **Scoring:** Funny target hits are the primary score; distance is a secondary/bonus stat
 - **Reactions:** Big cartoon ragdoll physics — creatures/props get launched, fly off screen, tumble
 - **Style:** Silly sound effects and squash-and-stretch animation
+- **Game feel / juice:** screen shake, a brief hit-stop freeze and camera punch on contact, slow-motion on big combos (and a bigger one on the exploding ball), full-screen flashes, a popping combo meter, and dust puffs on landing — tuned so hits feel weighty without being nauseating
 
 ### 6a. V1 Scope
 - 4 levels/scenes for launch, each with its own layout and funny-target set
