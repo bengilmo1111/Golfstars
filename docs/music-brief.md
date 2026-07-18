@@ -5,10 +5,12 @@ background track per level. The shared identity and delivery specs are stated
 once; each level has its own short prompt, and there's a fill-in template for
 future ranges.
 
-> The model only produces audio. Wiring the tracks into the game (per-level
-> playback, seamless looping, crossfade on level change, respecting the mute
-> toggle, ducking under SFX) is a **separate code step** — not part of this
-> brief. Keep the filename convention in §3 exact so that step is mechanical.
+> The model only produces audio. **Playback is already wired in the game**: it
+> preloads `assets/music-<level-id>.<ext>` (tries `.ogg`, `.mp3`, `.wav`,
+> `.m4a`), plays each level's track on a loop, crossfades on level change,
+> respects the mute toggle, and **falls back to the built-in procedural loop**
+> whenever a track is missing or still loading. So you only need to generate the
+> files and drop them in under the §3 filename convention — no code changes.
 
 ---
 
