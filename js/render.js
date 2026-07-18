@@ -77,7 +77,8 @@
   }
 
   // ---------- Creature (shared by character + creature props) ----------
-  // opts: { body, belly, eye, squash (0..1 wide), rot, scale, blink }
+  // opts: { body, belly, eye, squash, rot, scale, blink, look, arm,
+  //         noLegs, club (shaft angle in radians — draws a held golf club) }
   function drawCreature(ctx, sx, sy, r, opts) {
     opts = opts || {};
     const body = opts.body || '#39d3c0';
@@ -90,9 +91,32 @@
     if (opts.rot) ctx.rotate(opts.rot);
     ctx.scale((opts.scale || 1) * squashX, (opts.scale || 1) * squashY);
 
-    // Shadow-ish feet.
-    ctx.fillStyle = body;
+    const legH = opts.noLegs ? 0 : r * 0.55;
+
+    // Legs + feet (feet planted at y = 0, the ground).
+    if (legH) {
+      const wob = Math.sin((opts.arm || 0) * 1.3) * r * 0.06;
+      ctx.strokeStyle = body;
+      ctx.lineWidth = r * 0.22;
+      ctx.lineCap = 'round';
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.32, -legH);
+      ctx.lineTo(-r * 0.36, -r * 0.05);
+      ctx.moveTo(r * 0.32, -legH);
+      ctx.lineTo(r * 0.36 + wob, -r * 0.05);
+      ctx.stroke();
+      ctx.fillStyle = eye; // little dark shoes
+      ctx.beginPath();
+      ctx.ellipse(-r * 0.44, 0, r * 0.28, r * 0.14, 0, 0, Math.PI * 2);
+      ctx.ellipse(r * 0.44 + wob, 0, r * 0.28, r * 0.14, 0, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // Lift the body so it sits on top of the legs.
+    ctx.translate(0, -legH);
+
     // Body (egg).
+    ctx.fillStyle = body;
     ctx.beginPath();
     ctx.ellipse(0, -r, r, r * 1.15, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -101,17 +125,50 @@
     ctx.beginPath();
     ctx.ellipse(0, -r * 0.85, r * 0.6, r * 0.72, 0, 0, Math.PI * 2);
     ctx.fill();
-    // Stubby arms.
+
+    // Arms — either gripping a golf club, or idle stubby arms.
     ctx.strokeStyle = body;
-    ctx.lineWidth = r * 0.28;
+    ctx.lineWidth = r * 0.26;
     ctx.lineCap = 'round';
-    const armWave = opts.arm || 0;
-    ctx.beginPath();
-    ctx.moveTo(-r * 0.8, -r);
-    ctx.lineTo(-r * 1.25, -r + Math.sin(armWave) * r * 0.4);
-    ctx.moveTo(r * 0.8, -r);
-    ctx.lineTo(r * 1.25, -r + Math.cos(armWave) * r * 0.4);
-    ctx.stroke();
+    if (opts.club != null) {
+      const grip = { x: r * 0.55, y: -r * 0.95 };
+      // Both arms reach to the shared grip.
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.5, -r * 1.0);
+      ctx.lineTo(grip.x, grip.y);
+      ctx.moveTo(r * 0.55, -r * 1.05);
+      ctx.lineTo(grip.x, grip.y);
+      ctx.stroke();
+      // Shaft.
+      const ang = opts.club;
+      const L = r * 2.4;
+      const hx = grip.x + Math.cos(ang) * L;
+      const hy = grip.y + Math.sin(ang) * L;
+      ctx.strokeStyle = '#cfd6dc';
+      ctx.lineWidth = r * 0.12;
+      ctx.beginPath();
+      ctx.moveTo(grip.x, grip.y);
+      ctx.lineTo(hx, hy);
+      ctx.stroke();
+      // Club head.
+      ctx.save();
+      ctx.translate(hx, hy);
+      ctx.rotate(ang);
+      ctx.fillStyle = '#9aa3ab';
+      ctx.beginPath();
+      ctx.ellipse(0, 0, r * 0.36, r * 0.22, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    } else {
+      const armWave = opts.arm || 0;
+      ctx.beginPath();
+      ctx.moveTo(-r * 0.8, -r);
+      ctx.lineTo(-r * 1.2, -r + Math.sin(armWave) * r * 0.4);
+      ctx.moveTo(r * 0.8, -r);
+      ctx.lineTo(r * 1.2, -r + Math.cos(armWave) * r * 0.4);
+      ctx.stroke();
+    }
+
     // Eye (one big central eye).
     ctx.fillStyle = '#fff';
     ctx.beginPath();
@@ -465,20 +522,50 @@
     ctx.globalAlpha = 1;
   }
 
-  function drawTee(ctx, view, character, swingT) {
+  function smoothstep(t) {
+    t = Math.max(0, Math.min(1, t));
+    return t * t * (3 - 2 * t);
+  }
+
+  // Golf-swing club angle (radians, screen space) from swing state.
+  // Timeline after release: backswing -> impact (IMPACT_T) -> follow-through.
+  const SWING = { IDLE: 0.7, WINDUP: -2.3, IMPACT: 0.7, FOLLOW: -1.15, IMPACT_T: 0.12, DUR: 0.5 };
+  function swingClubAngle(swingT, aiming, power) {
+    const S = SWING;
+    if (aiming) {
+      // Wind the club back as the player drags (a good bit even at low power).
+      return lerp(S.IDLE, S.WINDUP, 0.4 + 0.6 * Math.min(1, power));
+    }
+    if (swingT > 0 && swingT < S.DUR) {
+      if (swingT < S.IMPACT_T) return lerp(S.WINDUP, S.IMPACT, smoothstep(swingT / S.IMPACT_T));
+      return lerp(S.IMPACT, S.FOLLOW, smoothstep((swingT - S.IMPACT_T) / (S.DUR - S.IMPACT_T)));
+    }
+    if (swingT >= S.DUR && swingT < S.DUR + 0.3) {
+      return lerp(S.FOLLOW, S.IDLE, (swingT - S.DUR) / 0.3);
+    }
+    return S.IDLE;
+  }
+
+  // opts: { swingT, aiming, power }
+  function drawTee(ctx, view, character, opts) {
+    opts = opts || {};
+    const s = view.scale;
     const base = view.toScreen(view.teeX, 0);
     // Tee peg.
     ctx.fillStyle = '#eee';
-    ctx.fillRect(base.x - 2, base.y - 14 * view.scale, 4, 14 * view.scale);
-    // Character beside the tee doing a squash on swing.
-    const squash = swingT > 0 ? Math.sin(swingT * 12) * 0.25 : 0;
-    drawCreature(ctx, base.x - 34 * view.scale, base.y, 20 * view.scale, {
+    ctx.fillRect(base.x - 2, base.y - 14 * s, 4, 14 * s);
+    const st = opts.swingT || 0;
+    const clubAngle = swingClubAngle(st, opts.aiming, opts.power || 0);
+    // A little squash-bounce right at impact.
+    const impact = st > 0.06 && st < 0.22 ? Math.sin(((st - 0.06) / 0.16) * Math.PI) * 0.14 : 0;
+    drawCreature(ctx, base.x - 30 * s, base.y, 20 * s, {
       body: character.body,
       belly: character.belly,
       eye: character.eye,
-      squash: Math.max(0, squash),
-      arm: performance.now() / 160,
-      look: 1
+      look: 1,
+      arm: performance.now() / 220,
+      club: clubAngle,
+      squash: impact
     });
   }
 
