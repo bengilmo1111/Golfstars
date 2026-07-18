@@ -101,6 +101,18 @@ test('combo persists across shots while the timer is alive', () => {
   assert.strictEqual(r.combo, 2);
 });
 
+test('typeHits records scoring hits per prop type for challenges', () => {
+  const round = Scoring.createRound(Props.propPoints);
+  round.startShot();
+  round.registerHit('balloon');
+  round.registerHit('golfcart');
+  round.registerHit('golfcart');
+  round.registerHit('trampoline'); // non-scoring, not counted in typeHits
+  assert.strictEqual(round.typeHits.balloon, 1);
+  assert.strictEqual(round.typeHits.golfcart, 2);
+  assert.strictEqual(round.typeHits.trampoline, undefined);
+});
+
 test('a whiffed shot still scores distance only', () => {
   const round = Scoring.createRound(Props.propPoints);
   round.startShot();

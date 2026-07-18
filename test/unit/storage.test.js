@@ -56,6 +56,28 @@ test('selections persist and merge', () => {
   assert.strictEqual(st.selectedCharacter, 'nina');
 });
 
+test('recordRound merges completed challenges and reports newly completed', () => {
+  const s = Storage.createStorage(stubBackend());
+  const r1 = s.recordRound('sunny-range', 300, ['balloon', 'combo3']);
+  assert.deepStrictEqual(r1.newChallenges.sort(), ['balloon', 'combo3']);
+  assert.deepStrictEqual(s.getChallenges('sunny-range'), { balloon: true, combo3: true });
+  // Re-completing an already-done challenge is not "new"; a fresh one is.
+  const r2 = s.recordRound('sunny-range', 100, ['balloon', 'nosplash']);
+  assert.deepStrictEqual(r2.newChallenges, ['nosplash']);
+  assert.deepStrictEqual(s.getChallenges('sunny-range'), {
+    balloon: true,
+    combo3: true,
+    nosplash: true
+  });
+});
+
+test('recordRound still works with no challenge argument', () => {
+  const s = Storage.createStorage(stubBackend());
+  const r = s.recordRound('sunny-range', 200);
+  assert.deepStrictEqual(r.newChallenges, []);
+  assert.strictEqual(s.load().careerScore, 200);
+});
+
 test('reset clears saved state', () => {
   const s = Storage.createStorage(stubBackend());
   s.recordRound('sunny-range', 300);

@@ -37,6 +37,7 @@
       comboTimer: 0, // seconds left to extend the chain
       bestCombo: 0,
       shots: [],
+      typeHits: {}, // count of scoring hits per prop type (for challenges)
       _shotPoints: 0,
       _shotHits: 0,
       _shotMaxMult: 1,
@@ -89,6 +90,7 @@
           this._shotPoints += awarded;
           this._shotHits += 1;
           this._shotMaxMult = Math.max(this._shotMaxMult, multiplier);
+          this.typeHits[type] = (this.typeHits[type] || 0) + 1;
         }
         return { awarded, base, combo: this.combo, multiplier };
       },

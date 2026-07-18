@@ -16,6 +16,8 @@
       shots: 5,
       length: 2600, // downrange world length
       wind: 0,
+      stars: [500, 1000, 1700], // bronze / silver / gold score thresholds
+      challenges: [{ id: 'combo3' }, { id: 'balloon' }, { id: 'nosplash' }],
       sky: ['#8fd6ff', '#d7f2ff'],
       ground: '#6fca5a',
       props: [
@@ -38,6 +40,8 @@
       shots: 5,
       length: 3000,
       wind: 240, // gentle tailwind
+      stars: [700, 1400, 2200],
+      challenges: [{ id: 'balloon' }, { id: 'bigdrive', param: 1300 }, { id: 'moving' }],
       sky: ['#ffb36b', '#ffe0a3'],
       ground: '#57b968',
       props: [
@@ -61,6 +65,8 @@
       shots: 6,
       length: 3400,
       wind: -200, // tricky headwind
+      stars: [900, 1700, 2600],
+      challenges: [{ id: 'combo5' }, { id: 'balloon' }, { id: 'nosplash' }],
       sky: ['#b48cff', '#ffd0f0'],
       ground: '#4fbf8a',
       props: [
@@ -86,6 +92,8 @@
       shots: 6,
       length: 3800,
       wind: 180,
+      stars: [1000, 1900, 2900],
+      challenges: [{ id: 'bigdrive', param: 1600 }, { id: 'moving' }, { id: 'combo5' }],
       sky: ['#2b3a6b', '#5b6bb0'],
       ground: '#3f8f6a',
       props: [
@@ -119,7 +127,26 @@
     return level.props.reduce((sum, p) => sum + propPoints(p.type), 0);
   }
 
-  const api = { TEE_X, GROUND_Y, LEVELS, getLevel, levelMaxPoints };
+  /** Stars (0..3) earned for a given best score on a level. */
+  function levelStars(level, score) {
+    if (!level || !level.stars) return 0;
+    let n = 0;
+    for (const t of level.stars) if (score >= t) n += 1;
+    return n;
+  }
+
+  /**
+   * A level is unlocked if it's the first, or the previous level has earned at
+   * least one star. `getBest(levelId)` returns the stored best score.
+   */
+  function isUnlocked(index, getBest) {
+    if (index <= 0) return true;
+    const prev = LEVELS[index - 1];
+    if (!prev) return false;
+    return levelStars(prev, getBest(prev.id) || 0) >= 1;
+  }
+
+  const api = { TEE_X, GROUND_Y, LEVELS, getLevel, levelMaxPoints, levelStars, isUnlocked };
 
   global.GS = global.GS || {};
   global.GS.Levels = api;

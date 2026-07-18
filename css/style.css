@@ -220,6 +220,34 @@ h3 { font-size: 16px; text-align: left; margin-top: 14px; color: #5a6b76; }
 .chip.locked { opacity: 0.55; cursor: default; }
 .chip.locked b::before { content: "🔒 "; }
 
+/* ---------- Stars & challenges ---------- */
+.stars-row { display: flex; justify-content: center; gap: 6px; margin: 4px 0 8px; }
+.star { font-size: 40px; color: #d7dee3; line-height: 1; }
+.star.earned { color: var(--accent2); text-shadow: 0 2px 0 rgba(0,0,0,0.12); }
+.star.pop { animation: starpop 0.5s ease; }
+@keyframes starpop {
+  0% { transform: scale(0.2) rotate(-30deg); opacity: 0; }
+  60% { transform: scale(1.35) rotate(8deg); }
+  100% { transform: scale(1) rotate(0); }
+}
+.lvl-stars { color: var(--accent2); font-size: 14px; letter-spacing: 1px; }
+
+.challenge-list { list-style: none; padding: 0; margin: 8px 0; text-align: left; }
+.challenge {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 7px 12px;
+  border-radius: 10px;
+  margin-bottom: 5px;
+  background: #f2f5f7;
+  color: #8a97a0;
+}
+.challenge.done { color: var(--good); background: #e5fbf4; }
+.challenge.just { background: var(--accent2); color: var(--ink); animation: pop 0.4s ease; }
+.nexthint { font-size: 13px; color: #8a97a0; font-weight: 700; margin: 6px 0; }
+
+.level-card.locked { opacity: 0.6; cursor: default; box-shadow: none; }
+
 /* ---------- Results ---------- */
 .score-big { font-size: 46px; font-weight: 900; color: var(--accent); margin: 6px 0; }
 .flag { color: var(--good); font-weight: 800; font-size: 13px; }

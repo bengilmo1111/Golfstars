@@ -13,6 +13,7 @@
     return {
       careerScore: 0,
       best: {}, // levelId -> best round score
+      challenges: {}, // levelId -> { challengeId: true }
       selectedCharacter: 'henry',
       selectedBall: 'standard',
       selectedClub: 'starter'
@@ -44,7 +45,8 @@
         if (!raw) return defaultState();
         const parsed = JSON.parse(raw);
         return Object.assign(defaultState(), parsed, {
-          best: Object.assign({}, parsed.best)
+          best: Object.assign({}, parsed.best),
+          challenges: Object.assign({}, parsed.challenges)
         });
       } catch (e) {
         return defaultState();
@@ -76,19 +78,34 @@
         return load().best[levelId] || 0;
       },
 
+      getChallenges(levelId) {
+        return load().challenges[levelId] || {};
+      },
+
       /**
-       * Record a completed round. Adds to career score and updates the level
-       * best if beaten. Returns { state, isBest, prevCareer }.
+       * Record a completed round. Adds to career score, updates the level best
+       * if beaten, and merges any completed challenge ids.
+       * Returns { state, isBest, prevCareer, newChallenges }.
        */
-      recordRound(levelId, roundScore) {
+      recordRound(levelId, roundScore, completedChallengeIds) {
         const state = load();
         const prevCareer = state.careerScore;
         state.careerScore += roundScore;
         const prevBest = state.best[levelId] || 0;
         const isBest = roundScore > prevBest;
         if (isBest) state.best[levelId] = roundScore;
+
+        const done = state.challenges[levelId] || (state.challenges[levelId] = {});
+        const newChallenges = [];
+        (completedChallengeIds || []).forEach((id) => {
+          if (!done[id]) {
+            done[id] = true;
+            newChallenges.push(id);
+          }
+        });
+
         save(state);
-        return { state, isBest, prevCareer };
+        return { state, isBest, prevCareer, newChallenges };
       },
 
       setSelection(partial) {
