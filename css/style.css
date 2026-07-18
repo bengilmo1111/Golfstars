@@ -111,6 +111,14 @@ html, body {
 }
 
 /* ---------- Screens ---------- */
+#screen-title {
+  background-image:
+    linear-gradient(rgba(20,40,60,0.35), rgba(20,40,60,0.45)),
+    url('../assets/title-bg.webp');
+  background-size: cover;
+  background-position: center;
+}
+
 .screen {
   position: absolute;
   inset: 0;

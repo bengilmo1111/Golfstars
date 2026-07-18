@@ -7,13 +7,15 @@
  */
 import { chromium } from 'playwright';
 import assert from 'node:assert';
+import { existsSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
 const { createServer } = require('../../scripts/serve.js');
 
 // The bundled Chromium in this environment; fall back to Playwright's default.
-const EXECUTABLE = process.env.PW_CHROMIUM || '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const BUNDLED_CHROMIUM = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
+const EXECUTABLE = process.env.PW_CHROMIUM || (existsSync(BUNDLED_CHROMIUM) ? BUNDLED_CHROMIUM : undefined);
 
 function startServer() {
   return new Promise((resolve) => {
@@ -35,21 +37,87 @@ async function poll(page, predicate, timeoutMs = 8000, everyMs = 80) {
 
 async function main() {
   const { server, port } = await startServer();
-  const browser = await chromium.launch({ headless: true, executablePath: EXECUTABLE });
+  const launchOptions = EXECUTABLE ? { headless: true, executablePath: EXECUTABLE } : { headless: true };
+  const browser = await chromium.launch(launchOptions);
   const errors = [];
+  const expectedMissingBg = process.env.EXPECT_MISSING_BG || null;
   try {
     // Landscape-first: the range is designed to show more of the course wide.
     const page = await browser.newPage({ viewport: { width: 880, height: 460 } });
     page.on('pageerror', (e) => errors.push(e.message));
     page.on('console', (m) => {
       const text = m.text();
-      if (m.type() === 'error' && !/favicon/i.test(text)) errors.push('console: ' + text);
+      if (m.type() === 'error' && !/favicon|assets\//i.test(text + ' ' + m.location().url)) errors.push('console: ' + text);
     });
 
     await page.goto('http://localhost:' + port + '/');
 
     // 1. The game boots and exposes its API on the title screen.
     await page.waitForFunction(() => window.GS && window.GS.game && window.GS.game.getState);
+    await page.waitForFunction((missing) => window.GS.Levels.LEVELS.every((level) => {
+      const status = window.GS.Images.status['bg-' + level.id];
+      return level.id === missing ? status === 'error' : status === 'ready';
+    }), expectedMissingBg);
+
+    const art = await page.evaluate(async (missing) => {
+      const sample = (ctx, width, height) => {
+        const data = ctx.getImageData(0, 0, width, height).data;
+        let hash = 2166136261;
+        for (let i = 0; i < data.length; i += 97) {
+          hash ^= data[i];
+          hash = Math.imul(hash, 16777619);
+        }
+        return hash >>> 0;
+      };
+      const canvas = document.createElement('canvas');
+      canvas.width = 440;
+      canvas.height = 230;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      const levels = window.GS.Levels.LEVELS.map((level) => {
+        const image = window.GS.Images.get('bg-' + level.id);
+        const view = { camX: 0, groundScreenY: 184, toScreen: () => ({ x: -100, y: 184 }) };
+        window.GS.Render.drawBackground(ctx, 440, 230, view, level, 0);
+        const atRest = sample(ctx, 440, 230);
+        view.camX = 500;
+        window.GS.Render.drawBackground(ctx, 440, 230, view, level, 0);
+        const afterPan = sample(ctx, 440, 230);
+        window.GS.Render.drawGround(ctx, 440, 230, view, level);
+        const groundPixel = Array.from(ctx.getImageData(4, 220, 1, 1).data);
+        return {
+          id: level.id,
+          status: window.GS.Images.status['bg-' + level.id],
+          width: image ? image.naturalWidth : 0,
+          height: image ? image.naturalHeight : 0,
+          parallaxChanged: atRest !== afterPan,
+          groundOpaque: groundPixel[3] === 255
+        };
+      });
+      const title = await new Promise((resolve) => {
+        const image = new Image();
+        image.onload = () => resolve({ width: image.naturalWidth, height: image.naturalHeight });
+        image.onerror = () => resolve({ width: 0, height: 0 });
+        image.src = 'assets/title-bg.webp';
+      });
+      return {
+        levels,
+        title,
+        titleBackground: getComputedStyle(document.querySelector('#screen-title')).backgroundImage
+      };
+    }, expectedMissingBg);
+
+    assert.match(art.titleBackground, /title-bg\.webp/i, 'title screen should reference its illustrated background');
+    assert.deepStrictEqual([art.title.width, art.title.height], [1920, 1080], 'title background dimensions');
+    for (const level of art.levels) {
+      assert.strictEqual(level.groundOpaque, true, level.id + ' ground should draw over the background');
+      if (level.id === expectedMissingBg) {
+        assert.strictEqual(level.status, 'error', level.id + ' should exercise the procedural fallback');
+      } else {
+        assert.strictEqual(level.status, 'ready', level.id + ' background should load');
+        assert.deepStrictEqual([level.width, level.height], [1920, 1080], level.id + ' dimensions');
+        assert.strictEqual(level.parallaxChanged, true, level.id + ' background should parallax with camX');
+      }
+    }
+
     let st = await page.evaluate(() => window.GS.game.getState());
     assert.strictEqual(st.screen, 'title', 'should boot to the title screen');
 
