@@ -43,7 +43,7 @@
       stars: [700, 1400, 2200],
       challenges: [{ id: 'balloon' }, { id: 'bigdrive', param: 1300 }, { id: 'moving' }],
       sky: ['#ffb36b', '#ffe0a3'],
-      ground: '#57b968',
+      ground: '#7c9e46', // warm olive-green to match the sunset
       props: [
         { type: 'scarecrow', x: 500 },
         { type: 'buckets', x: 700 },
@@ -68,7 +68,7 @@
       stars: [900, 1700, 2600],
       challenges: [{ id: 'combo5' }, { id: 'balloon' }, { id: 'nosplash' }],
       sky: ['#b48cff', '#ffd0f0'],
-      ground: '#4fbf8a',
+      ground: '#3fa578', // deeper dusk green
       props: [
         { type: 'trampoline', x: 460 },
         { type: 'portaloo', x: 620 },
@@ -95,7 +95,7 @@
       stars: [1000, 1900, 2900],
       challenges: [{ id: 'bigdrive', param: 1600 }, { id: 'moving' }, { id: 'combo5' }],
       sky: ['#2b3a6b', '#5b6bb0'],
-      ground: '#3f8f6a',
+      ground: '#2d6353', // dark, moonlit blue-green
       props: [
         { type: 'buckets', x: 520 },
         { type: 'cartcreature', x: 760 },

@@ -77,13 +77,37 @@
     ctx.fill();
   }
 
+  // Mix a hex colour toward black (amt<0) or white (amt>0); amt in [-1, 1].
+  function shade(hex, amt) {
+    const c = hex.replace('#', '');
+    const full = c.length === 3 ? c.split('').map((x) => x + x).join('') : c;
+    const n = parseInt(full, 16);
+    const target = amt < 0 ? 0 : 255;
+    const p = Math.abs(amt);
+    const mix = (ch) => Math.round(ch + (target - ch) * p);
+    const r = mix((n >> 16) & 255);
+    const g = mix((n >> 8) & 255);
+    const b = mix(n & 255);
+    return 'rgb(' + r + ',' + g + ',' + b + ')';
+  }
+
   function drawGround(ctx, W, H, view, level) {
     const gy = view.groundScreenY;
+    // Flat playable ground.
     ctx.fillStyle = level.ground;
     ctx.fillRect(0, gy, W, H - gy);
-    // Darker strip.
-    ctx.fillStyle = 'rgba(0,0,0,0.10)';
-    ctx.fillRect(0, gy, W, 6);
+    // Grassy bank: a darker lip at the horizon fading into the ground, so the
+    // illustrated background meets the flat ground as an intentional edge
+    // instead of a hard seam.
+    const bank = 26;
+    const grad = ctx.createLinearGradient(0, gy, 0, gy + bank);
+    grad.addColorStop(0, shade(level.ground, -0.24));
+    grad.addColorStop(1, level.ground);
+    ctx.fillStyle = grad;
+    ctx.fillRect(0, gy, W, bank);
+    // A soft lit rim right on the horizon line to catch the light.
+    ctx.fillStyle = shade(level.ground, 0.16);
+    ctx.fillRect(0, gy, W, 2);
     // Distance markers every 500 world units.
     ctx.fillStyle = 'rgba(255,255,255,0.5)';
     ctx.font = '12px system-ui, sans-serif';
