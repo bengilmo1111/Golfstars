@@ -21,6 +21,9 @@
     $('#hud').style.display = playing ? 'flex' : 'none';
     const spinBar = $('#spin-bar');
     if (spinBar) spinBar.style.display = playing ? 'flex' : 'none';
+    // Menu screens use the title theme; play uses the level track (set in
+    // startLevel); results keeps the level's music playing.
+    if (Audio.playLevel && name !== 'play' && name !== 'results') Audio.playLevel('title');
   }
 
   // ---------- Game state ----------
@@ -167,6 +170,7 @@
     teeUpBall();
     state.camX = Levels.TEE_X - (W / 3) / state.scale;
     updateHud();
+    if (Audio.playLevel) Audio.playLevel(level.id);
     showScreen('play');
   }
 
@@ -1089,6 +1093,7 @@
   function init() {
     resize();
     if (global.GS.Images) global.GS.Images.preloadLevels(Levels.LEVELS);
+    if (Audio.preloadMusic) Audio.preloadMusic(Levels.LEVELS.map((l) => l.id));
     global.addEventListener('resize', resize);
     bindButtons();
     bindInput();

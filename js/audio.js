@@ -12,7 +12,9 @@
 
   let ctx = null;
   let master = null;
-  let musicGain = null;
+  let musicGain = null; // procedural-loop bus
+  let procGain = null; // procedural fade node
+  let trackBusGain = null; // decoded per-level track bus
   let muted = false;
   let musicOn = true;
   const MASTER_VOL = 0.65;
@@ -37,6 +39,13 @@
     musicGain = ctx.createGain();
     musicGain.gain.value = 0.11;
     musicGain.connect(master);
+    procGain = ctx.createGain(); // fades the procedural loop in/out
+    procGain.gain.value = 1;
+    procGain.connect(musicGain);
+    // Decoded per-level tracks sit on a louder bus (real music is normalised).
+    trackBusGain = ctx.createGain();
+    trackBusGain.gain.value = 0.45;
+    trackBusGain.connect(master);
     return ctx;
   }
 
@@ -55,7 +64,8 @@
     } catch (e) {
       /* ignore */
     }
-    if (musicOn && !muted) startMusic();
+    decodePreload();
+    if (musicOn && !muted) applyMusic();
   }
 
   function installAutoUnlock() {
@@ -76,8 +86,8 @@
   function setMuted(m) {
     muted = m;
     if (master) master.gain.value = m ? 0 : MASTER_VOL;
-    if (m) stopMusic();
-    else if (musicOn) startMusic();
+    if (m) stopAllMusic();
+    else if (musicOn) applyMusic();
   }
 
   function now() {
@@ -242,17 +252,33 @@
     }
   }
 
-  // ---- Background music: a light, upbeat looping bed ----
+  // ---- Background music ----
+  // Per-level tracks live at assets/music-<key>.<ext>. When a track is present
+  // it crossfades in; when it's absent (or still loading) a light procedural
+  // loop plays instead, so the game always has music and drops the real tracks
+  // in seamlessly once they exist.
+  const MUSIC_EXTS = ['ogg', 'mp3', 'wav', 'm4a'];
+  const XFADE = 0.8; // crossfade seconds
+  const trackBuffers = {}; // key -> AudioBuffer
+  const trackState = {}; // key -> 'loading' | 'ready' | 'missing'
+  let preloadList = ['title'];
+  let desiredKey = 'title'; // what we want to hear
+  let currentMode = 'none'; // 'track' | 'procedural' | 'none'
+  let currentTrackKey = null;
+  let trackSrc = null;
+  let trackGain = null;
+
+  // --- Procedural fallback loop (a light, upbeat bed) ---
   // 16 eighth-note steps; chord roots change every 4 steps (C - G - Am - F).
   const BASS = [130.81, null, null, null, 98.0, null, null, null, 110.0, null, null, null, 87.31, null, null, null];
   const MELODY = [523.25, null, 659.25, null, 784, null, 659.25, 587.33, 523.25, null, 659.25, 784, 880, null, 784, 659.25];
-  const STEP_DUR = 0.19; // seconds per eighth note (~ upbeat tempo)
+  const STEP_DUR = 0.19;
   let musicTimer = null;
   let nextNoteTime = 0;
   let step = 0;
 
   function musicNote(freq, when, type, gain, dur) {
-    if (!musicGain) return;
+    if (!procGain) return;
     const osc = ctx.createOscillator();
     const g = ctx.createGain();
     osc.type = type;
@@ -261,13 +287,13 @@
     g.gain.exponentialRampToValueAtTime(gain, when + 0.02);
     g.gain.exponentialRampToValueAtTime(0.0001, when + dur);
     osc.connect(g);
-    g.connect(musicGain);
+    g.connect(procGain);
     osc.start(when);
     osc.stop(when + dur + 0.02);
   }
 
   function scheduleMusic() {
-    if (!ctx || muted || !musicOn) return;
+    if (!ctx || currentMode !== 'procedural') return;
     while (nextNoteTime < ctx.currentTime + 0.25) {
       const b = BASS[step];
       if (b) musicNote(b, nextNoteTime, 'triangle', 0.5, STEP_DUR * 3.6);
@@ -278,23 +304,150 @@
     }
   }
 
-  function startMusic() {
-    if (!ensure() || musicTimer || muted || !musicOn) return;
+  function startScheduler() {
+    if (musicTimer) return;
     nextNoteTime = ctx.currentTime + 0.1;
     musicTimer = setInterval(scheduleMusic, 45);
   }
-
-  function stopMusic() {
+  function stopScheduler() {
     if (musicTimer) {
       clearInterval(musicTimer);
       musicTimer = null;
     }
   }
 
+  function rampGain(param, target, dur) {
+    const t = ctx.currentTime;
+    param.cancelScheduledValues(t);
+    param.setValueAtTime(param.value, t);
+    param.linearRampToValueAtTime(target, t + dur);
+  }
+
+  function fadeOutCurrent() {
+    if (currentMode === 'procedural') {
+      rampGain(procGain.gain, 0, XFADE);
+      setTimeout(stopScheduler, XFADE * 1000 + 80);
+    } else if (currentMode === 'track' && trackSrc) {
+      const s = trackSrc;
+      rampGain(trackGain.gain, 0, XFADE);
+      try {
+        s.stop(ctx.currentTime + XFADE + 0.06);
+      } catch (e) {
+        /* already stopped */
+      }
+    }
+    trackSrc = null;
+    trackGain = null;
+    currentMode = 'none';
+  }
+
+  function startProceduralMusic() {
+    fadeOutCurrent();
+    currentMode = 'procedural';
+    currentTrackKey = null;
+    procGain.gain.cancelScheduledValues(ctx.currentTime);
+    procGain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    startScheduler();
+    rampGain(procGain.gain, 1, XFADE);
+  }
+
+  function startTrack(key) {
+    fadeOutCurrent();
+    const src = ctx.createBufferSource();
+    src.buffer = trackBuffers[key];
+    src.loop = true;
+    const g = ctx.createGain();
+    g.gain.value = 0.0001;
+    src.connect(g);
+    g.connect(trackBusGain);
+    src.start();
+    rampGain(g.gain, 1, XFADE);
+    trackSrc = src;
+    trackGain = g;
+    currentMode = 'track';
+    currentTrackKey = key;
+  }
+
+  function stopAllMusic() {
+    stopScheduler();
+    if (trackSrc) {
+      try {
+        trackSrc.stop();
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    trackSrc = null;
+    trackGain = null;
+    currentMode = 'none';
+  }
+
+  // Pick the right source for the desired level: its track if decoded, else the
+  // procedural fallback (and make sure the track is loading for next time).
+  function applyMusic() {
+    if (!ctx || ctx.state !== 'running' || !musicOn || muted) return;
+    const key = desiredKey;
+    if (trackState[key] === 'ready' && trackBuffers[key]) {
+      if (currentMode === 'track' && currentTrackKey === key) return;
+      startTrack(key);
+    } else {
+      if (currentMode !== 'procedural') startProceduralMusic();
+      if (trackState[key] === undefined) loadTrack(key);
+    }
+  }
+
+  function decodeAudio(arrayBuffer) {
+    return new Promise((resolve, reject) => {
+      const p = ctx.decodeAudioData(arrayBuffer, resolve, reject);
+      if (p && p.then) p.then(resolve, reject);
+    });
+  }
+
+  function loadTrack(key) {
+    if (!ctx || trackState[key] === 'loading' || trackState[key] === 'ready') return;
+    trackState[key] = 'loading';
+    const tryExt = (i) => {
+      if (i >= MUSIC_EXTS.length) {
+        trackState[key] = 'missing';
+        return;
+      }
+      fetch('assets/music-' + key + '.' + MUSIC_EXTS[i])
+        .then((r) => {
+          if (!r.ok) throw new Error('not found');
+          return r.arrayBuffer();
+        })
+        .then(decodeAudio)
+        .then((buf) => {
+          trackBuffers[key] = buf;
+          trackState[key] = 'ready';
+          if (desiredKey === key && !(currentMode === 'track' && currentTrackKey === key)) {
+            applyMusic();
+          }
+        })
+        .catch(() => tryExt(i + 1));
+    };
+    tryExt(0);
+  }
+
+  function decodePreload() {
+    if (!ctx) return;
+    preloadList.forEach(loadTrack);
+  }
+
+  // Public: queue the level tracks to preload, and choose which one plays.
+  function preloadMusic(ids) {
+    preloadList = ['title'].concat(ids || []);
+    decodePreload();
+  }
+  function playLevel(id) {
+    desiredKey = id || 'title';
+    applyMusic();
+  }
+
   function setMusic(on) {
     musicOn = on;
-    if (on && !muted) startMusic();
-    else stopMusic();
+    if (on && !muted) applyMusic();
+    else stopAllMusic();
   }
 
   installAutoUnlock();
@@ -305,6 +458,8 @@
     play,
     voice,
     setMusic,
+    preloadMusic,
+    playLevel,
     isMuted: () => muted,
     isMusicOn: () => musicOn
   };
