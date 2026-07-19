@@ -329,6 +329,26 @@
         continue;
       }
 
+      if (def.catapult) {
+        prop.cooldown = Math.max(0, prop.cooldown - 1);
+        if (!prop.hit && Props.hitsCatapultOperator(ball.x, ball.y, ball.radius, prop)) {
+          smashProp(prop);
+          spawnFloater(prop.x - def.width * 0.28, def.operator.height + 22, 'DISABLED!', '#ffe38a');
+          continue;
+        }
+        if (!prop.hit && prop.cooldown === 0 && Props.hitsCatapultCatcher(ball.x, ball.y, ball.radius, prop)) {
+          ball.vx = -Math.max(260, Math.abs(ball.vx) * def.fling);
+          ball.vy = Math.abs(ball.vy) * 0.45 + 240;
+          prop.cooldown = 36;
+          prop.hitT = 0;
+          Audio.play('clatter');
+          spawnFloater(prop.x + def.catcher.x, def.catcher.y + def.catcher.height, 'FLUNG BACK!', '#ff9b3d');
+          fxPunch(0.04);
+          fxShake(8);
+        }
+        continue;
+      }
+
       // Duck pond: the ball SKIPS off it (once for points), ducks scatter.
       if (def.pond) {
         if (!prop.hit && Props.hitsProp(ball.x, ball.y, ball.radius, prop) && ball.vy < 60) {
