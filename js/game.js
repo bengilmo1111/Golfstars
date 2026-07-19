@@ -329,6 +329,21 @@
         continue;
       }
 
+      if (def.catapult) {
+        prop.cooldown = Math.max(0, prop.cooldown - 1);
+        if (prop.cooldown === 0 && Props.hitsCatapultCatcher(ball.x, ball.y, ball.radius, prop)) {
+          ball.vx = -Math.max(260, Math.abs(ball.vx) * def.fling);
+          ball.vy = Math.abs(ball.vy) * 0.45 + 240;
+          prop.cooldown = 36;
+          prop.hitT = 0;
+          Audio.play('clatter');
+          spawnFloater(prop.x + def.catcher.x, def.catcher.y + def.catcher.height, 'FLUNG BACK!', '#ff9b3d');
+          fxPunch(0.04);
+          fxShake(8);
+        }
+        continue;
+      }
+
       // Duck pond: the ball SKIPS off it (once for points), ducks scatter.
       if (def.pond) {
         if (!prop.hit && Props.hitsProp(ball.x, ball.y, ball.radius, prop) && ball.vy < 60) {
@@ -385,7 +400,7 @@
     for (const other of state.props) {
       if (other === exclude || other.hit) continue;
       const od = Props.getPropType(other.type);
-      if (!od || other.type === 'trampoline' || od.pond) continue;
+      if (!od || other.type === 'trampoline' || od.pond || od.catapult) continue;
       const d = Math.hypot(other.x - cx, (od.jackpot ? other.y : od.height / 2) - cy);
       if (d <= radius) smashProp(other);
     }

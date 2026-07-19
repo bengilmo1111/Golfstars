@@ -53,7 +53,7 @@
         { type: 'golfcart', x: 1250 },
         { type: 'water', x: 1550 },
         { type: 'movingcreature', x: 1850 },
-        { type: 'picnic', x: 2050 },
+        { type: 'catapult', x: 2050 },
         { type: 'portaloo', x: 2300 },
         { type: 'scarecrow', x: 2550 },
         { type: 'cartcreature', x: 2800 }
@@ -80,7 +80,7 @@
         { type: 'golfcart', x: 1700 },
         { type: 'water', x: 1950 },
         { type: 'scarecrow', x: 2200 },
-        { type: 'picnic', x: 2400 },
+        { type: 'catapult', x: 2400 },
         { type: 'balloon', x: 2600 },
         { type: 'trampoline', x: 2800 },
         { type: 'picnic', x: 3050 }
@@ -134,7 +134,8 @@
         { type: 'tnt', x: 1600 },
         { type: 'golfcart', x: 1820 },
         { type: 'scarecrow', x: 2100 },
-        { type: 'water', x: 2400 },
+        { type: 'catapult', x: 2320 },
+        { type: 'water', x: 2520 },
         { type: 'movingcreature', x: 2700 },
         { type: 'beehive', x: 2950 },
         { type: 'portaloo', x: 3200 }

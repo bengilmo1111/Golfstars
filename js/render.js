@@ -334,8 +334,100 @@
       case 'beehive':
         drawBeehive(ctx, w, h, a, t);
         break;
+      case 'catapult':
+        drawCatapult(ctx, w, h, a, prop, t);
+        break;
     }
     ctx.restore();
+  }
+
+
+  function drawCatapult(ctx, w, h, a, prop, t) {
+    const recoil = a >= 0 ? Math.max(0, 1 - a * 7) : 0;
+    const wood = '#8a5527';
+    const darkWood = '#5d3518';
+    const rope = '#e0c36b';
+
+    // Sturdy wheeled base.
+    ctx.fillStyle = darkWood;
+    roundedRect(ctx, -w * 0.48, -h * 0.16, w * 0.78, h * 0.13, w * 0.03);
+    ctx.fill();
+    ctx.fillStyle = wood;
+    roundedRect(ctx, -w * 0.42, -h * 0.26, w * 0.65, h * 0.12, w * 0.03);
+    ctx.fill();
+    ctx.fillStyle = '#3b2a1f';
+    for (const wx of [-w * 0.34, w * 0.16]) {
+      ctx.beginPath();
+      ctx.arc(wx, -h * 0.04, w * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c99642';
+      ctx.beginPath();
+      ctx.arc(wx, -h * 0.04, w * 0.035, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3b2a1f';
+    }
+
+    // Uprights and cross pin.
+    ctx.strokeStyle = wood;
+    ctx.lineWidth = w * 0.06;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.16, -h * 0.18);
+    ctx.lineTo(-w * 0.06, -h * 0.82);
+    ctx.moveTo(w * 0.08, -h * 0.18);
+    ctx.lineTo(-w * 0.02, -h * 0.82);
+    ctx.stroke();
+    ctx.strokeStyle = rope;
+    ctx.lineWidth = w * 0.025;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.18, -h * 0.5);
+    ctx.lineTo(w * 0.12, -h * 0.5);
+    ctx.stroke();
+
+    // Lever to pull/release.
+    ctx.strokeStyle = '#d99a3a';
+    ctx.lineWidth = w * 0.035;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.34, -h * 0.23);
+    ctx.lineTo(-w * 0.5, -h * (0.48 + recoil * 0.08));
+    ctx.stroke();
+    ctx.fillStyle = '#ff6b4a';
+    ctx.beginPath();
+    ctx.arc(-w * 0.5, -h * (0.48 + recoil * 0.08), w * 0.045, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Throwing arm with an oversized catcher/net at the high end.
+    ctx.save();
+    ctx.translate(0, -h * 0.7);
+    ctx.rotate(-0.55 - recoil * 0.45);
+    ctx.strokeStyle = wood;
+    ctx.lineWidth = w * 0.055;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.2, 0);
+    ctx.lineTo(w * 0.42, 0);
+    ctx.stroke();
+    // Net/catcher at the high end.
+    ctx.fillStyle = 'rgba(80,55,30,0.18)';
+    ctx.strokeStyle = '#3b2a1f';
+    ctx.lineWidth = w * 0.025;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.5, 0, w * 0.28, h * 0.26, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = rope;
+    ctx.lineWidth = w * 0.012;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(w * 0.26, i * h * 0.07);
+      ctx.lineTo(w * 0.72, -i * h * 0.07);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Operator creature standing by the lever. The operator is decorative; the
+    // catapult remains permanently active.
+    drawCreature(ctx, -w * 0.38, 0, h * 0.13, { body: '#f0b35b', belly: '#ffe4b5', arm: t * 5, look: recoil ? 1 : 0 });
   }
 
   function drawCartCreature(ctx, w, h, a, prop) {
