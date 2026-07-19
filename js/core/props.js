@@ -136,19 +136,19 @@
       sound: 'buzz',
       reaction: 'swarm'
     },
-    // A defensive obstacle: the catcher/net kicks normal hits back toward the
-    // tee. Knock out the operator to disable it and score.
+    // A defensive obstacle: the oversized catcher/net kicks normal hits back
+    // toward the tee. The operator is decorative; the catapult stays on.
     catapult: {
       label: 'Catapult Crew',
-      points: 300,
-      width: 150,
-      height: 130,
+      points: 0,
+      width: 170,
+      height: 170,
       sound: 'clatter',
-      reaction: 'disable',
+      reaction: 'fling',
       catapult: true,
       fling: 0.82,
-      operator: { x: -54, y: 0, width: 38, height: 78 },
-      catcher: { x: 40, y: 72, width: 72, height: 50 }
+      operator: { x: -64, y: 0, width: 38, height: 78 },
+      catcher: { x: 45, y: 72, width: 144, height: 100 }
     }
   };
 
@@ -197,17 +197,12 @@
     return dx * dx + dy * dy <= radius * radius;
   }
 
-  function hitsCatapultOperator(ballX, ballY, radius, prop) {
-    const t = PROP_TYPES[prop.type];
-    return !!(t && t.operator && hitsPropRegion(ballX, ballY, radius, prop, t.operator));
-  }
-
   function hitsCatapultCatcher(ballX, ballY, radius, prop) {
     const t = PROP_TYPES[prop.type];
     return !!(t && t.catcher && hitsPropRegion(ballX, ballY, radius, prop, t.catcher));
   }
 
-  const api = { PROP_TYPES, getPropType, propPoints, hitsProp, hitsCatapultOperator, hitsCatapultCatcher };
+  const api = { PROP_TYPES, getPropType, propPoints, hitsProp, hitsCatapultCatcher };
 
   global.GS = global.GS || {};
   global.GS.Props = api;

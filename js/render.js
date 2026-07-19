@@ -343,8 +343,7 @@
 
 
   function drawCatapult(ctx, w, h, a, prop, t) {
-    const disabled = prop.hit;
-    const recoil = !disabled && a >= 0 ? Math.max(0, 1 - a * 7) : 0;
+    const recoil = a >= 0 ? Math.max(0, 1 - a * 7) : 0;
     const wood = '#8a5527';
     const darkWood = '#5d3518';
     const rope = '#e0c36b';
@@ -397,17 +396,10 @@
     ctx.arc(-w * 0.5, -h * (0.48 + recoil * 0.08), w * 0.045, 0, Math.PI * 2);
     ctx.fill();
 
-    // Throwing arm. When disabled, the arm drops loose and falls off the pivot.
+    // Throwing arm with an oversized catcher/net at the high end.
     ctx.save();
-    if (disabled) {
-      const p = Math.min(1, a / 1.1);
-      ctx.translate(w * 0.06 + p * w * 0.34, -h * 0.72 + p * h * 0.58);
-      ctx.rotate(0.9 + p * 1.7);
-      ctx.globalAlpha = 1 - p * 0.25;
-    } else {
-      ctx.translate(0, -h * 0.7);
-      ctx.rotate(-0.55 - recoil * 0.45);
-    }
+    ctx.translate(0, -h * 0.7);
+    ctx.rotate(-0.55 - recoil * 0.45);
     ctx.strokeStyle = wood;
     ctx.lineWidth = w * 0.055;
     ctx.lineCap = 'round';
@@ -420,29 +412,22 @@
     ctx.strokeStyle = '#3b2a1f';
     ctx.lineWidth = w * 0.025;
     ctx.beginPath();
-    ctx.ellipse(w * 0.46, 0, w * 0.14, h * 0.13, -0.2, 0, Math.PI * 2);
+    ctx.ellipse(w * 0.5, 0, w * 0.28, h * 0.26, -0.2, 0, Math.PI * 2);
     ctx.fill();
     ctx.stroke();
     ctx.strokeStyle = rope;
     ctx.lineWidth = w * 0.012;
     for (let i = -2; i <= 2; i++) {
       ctx.beginPath();
-      ctx.moveTo(w * 0.35, i * h * 0.035);
-      ctx.lineTo(w * 0.56, -i * h * 0.035);
+      ctx.moveTo(w * 0.26, i * h * 0.07);
+      ctx.lineTo(w * 0.72, -i * h * 0.07);
       ctx.stroke();
     }
     ctx.restore();
 
-    // Operator creature standing by the lever; he disappears in a dizzy pop when hit.
-    const opX = -w * 0.36;
-    if (!disabled) {
-      drawCreature(ctx, opX, 0, h * 0.15, { body: '#f0b35b', belly: '#ffe4b5', arm: t * 5, look: recoil ? 1 : 0 });
-    } else {
-      const p = Math.min(1, a / 1);
-      ctx.globalAlpha = 1 - p * 0.65;
-      drawCreature(ctx, opX - p * w * 0.12, -p * h * 0.25, h * 0.15, { body: '#f0b35b', belly: '#ffe4b5', rot: -p * 5, squash: 0.2 });
-      ctx.globalAlpha = 1;
-    }
+    // Operator creature standing by the lever. The operator is decorative; the
+    // catapult remains permanently active.
+    drawCreature(ctx, -w * 0.38, 0, h * 0.13, { body: '#f0b35b', belly: '#ffe4b5', arm: t * 5, look: recoil ? 1 : 0 });
   }
 
   function drawCartCreature(ctx, w, h, a, prop) {

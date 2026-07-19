@@ -331,12 +331,7 @@
 
       if (def.catapult) {
         prop.cooldown = Math.max(0, prop.cooldown - 1);
-        if (!prop.hit && Props.hitsCatapultOperator(ball.x, ball.y, ball.radius, prop)) {
-          smashProp(prop);
-          spawnFloater(prop.x - def.width * 0.28, def.operator.height + 22, 'DISABLED!', '#ffe38a');
-          continue;
-        }
-        if (!prop.hit && prop.cooldown === 0 && Props.hitsCatapultCatcher(ball.x, ball.y, ball.radius, prop)) {
+        if (prop.cooldown === 0 && Props.hitsCatapultCatcher(ball.x, ball.y, ball.radius, prop)) {
           ball.vx = -Math.max(260, Math.abs(ball.vx) * def.fling);
           ball.vy = Math.abs(ball.vy) * 0.45 + 240;
           prop.cooldown = 36;
@@ -405,7 +400,7 @@
     for (const other of state.props) {
       if (other === exclude || other.hit) continue;
       const od = Props.getPropType(other.type);
-      if (!od || other.type === 'trampoline' || od.pond) continue;
+      if (!od || other.type === 'trampoline' || od.pond || od.catapult) continue;
       const d = Math.hypot(other.x - cx, (od.jackpot ? other.y : od.height / 2) - cy);
       if (d <= radius) smashProp(other);
     }
