@@ -41,6 +41,7 @@ async function main() {
   const browser = await chromium.launch(launchOptions);
   const errors = [];
   const expectedMissingBg = process.env.EXPECT_MISSING_BG || null;
+  const expectedMissingMg = process.env.EXPECT_MISSING_MG || null;
   try {
     // Landscape-first: the range is designed to show more of the course wide.
     const page = await browser.newPage({ viewport: { width: 880, height: 460 } });
@@ -52,22 +53,26 @@ async function main() {
 
     await page.goto('http://localhost:' + port + '/');
 
-    // Levels that ship an illustrated background; others use the procedural
-    // gradient fallback and must NOT claim a loaded image.
-    const ART_LEVELS = ['sunny-range', 'sunset-hills', 'chaos-carnival', 'moonlight-madness'];
+    const ART_LEVELS = [
+      'sunny-range', 'sunset-hills', 'chaos-carnival',
+      'moonlight-madness', 'windy-cliffs', 'duck-derby'
+    ];
 
     // 1. The game boots and exposes its API on the title screen.
     await page.waitForFunction(() => window.GS && window.GS.game && window.GS.game.getState);
     await page.waitForFunction(
       (data) =>
         data.art.every((id) => {
-          const status = window.GS.Images.status['bg-' + id];
-          return id === data.missing ? status === 'error' : status === 'ready';
+          const bg = window.GS.Images.status['bg-' + id];
+          const mg = window.GS.Images.status['mg-' + id];
+          const bgDone = id === data.missingBg ? bg === 'error' : bg === 'ready';
+          const mgDone = id === data.missingMg ? mg === 'error' : mg === 'ready';
+          return bgDone && mgDone;
         }),
-      { art: ART_LEVELS, missing: expectedMissingBg }
+      { art: ART_LEVELS, missingBg: expectedMissingBg, missingMg: expectedMissingMg }
     );
 
-    const art = await page.evaluate(async (missing) => {
+    const art = await page.evaluate(async ({ missingBg, missingMg }) => {
       const sample = (ctx, width, height) => {
         const data = ctx.getImageData(0, 0, width, height).data;
         let hash = 2166136261;
@@ -82,7 +87,8 @@ async function main() {
       canvas.height = 230;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       const levels = window.GS.Levels.LEVELS.map((level) => {
-        const image = window.GS.Images.get('bg-' + level.id);
+        const bg = window.GS.Images.get('bg-' + level.id);
+        const mg = window.GS.Images.get('mg-' + level.id);
         const view = { camX: 0, groundScreenY: 184, toScreen: () => ({ x: -100, y: 184 }) };
         window.GS.Render.drawBackground(ctx, 440, 230, view, level, 0);
         const atRest = sample(ctx, 440, 230);
@@ -91,12 +97,38 @@ async function main() {
         const afterPan = sample(ctx, 440, 230);
         window.GS.Render.drawGround(ctx, 440, 230, view, level);
         const groundPixel = Array.from(ctx.getImageData(4, 220, 1, 1).data);
+
+        const draws = [];
+        const noop = () => {};
+        const probe = {
+          createLinearGradient: () => ({ addColorStop: noop }),
+          fillRect: noop,
+          beginPath: noop,
+          moveTo: noop,
+          lineTo: noop,
+          closePath: noop,
+          fill: noop,
+          arc: noop,
+          drawImage: (image, x) => draws.push({ src: image.src, x })
+        };
+        window.GS.Render.drawBackground(
+          probe,
+          440,
+          230,
+          { camX: 500, groundScreenY: 184 },
+          level,
+          0
+        );
+        const farDraw = draws.find((draw) => draw.src.includes('/bg-' + level.id + '.webp'));
+        const nearDraw = draws.find((draw) => draw.src.includes('/mg-' + level.id + '.webp'));
         return {
           id: level.id,
-          status: window.GS.Images.status['bg-' + level.id],
-          width: image ? image.naturalWidth : 0,
-          height: image ? image.naturalHeight : 0,
+          bgStatus: window.GS.Images.status['bg-' + level.id],
+          mgStatus: window.GS.Images.status['mg-' + level.id],
+          bgSize: bg ? [bg.naturalWidth, bg.naturalHeight] : [0, 0],
+          mgSize: mg ? [mg.naturalWidth, mg.naturalHeight] : [0, 0],
           parallaxChanged: atRest !== afterPan,
+          nearMovesFaster: farDraw && nearDraw ? Math.abs(nearDraw.x) > Math.abs(farDraw.x) : null,
           groundOpaque: groundPixel[3] === 255
         };
       });
@@ -111,23 +143,28 @@ async function main() {
         title,
         titleBackground: getComputedStyle(document.querySelector('#screen-title')).backgroundImage
       };
-    }, expectedMissingBg);
+    }, { missingBg: expectedMissingBg, missingMg: expectedMissingMg });
 
     assert.match(art.titleBackground, /title-bg\.webp/i, 'title screen should reference its illustrated background');
     assert.deepStrictEqual([art.title.width, art.title.height], [1920, 1080], 'title background dimensions');
-    const artSet = new Set(ART_LEVELS);
     for (const level of art.levels) {
       assert.strictEqual(level.groundOpaque, true, level.id + ' ground should draw over the background');
-      if (!artSet.has(level.id)) {
-        // Range without shipped art — must fall back, not claim a loaded image.
-        assert.notStrictEqual(level.status, 'ready', level.id + ' has no art; should use the fallback');
-      } else if (level.id === expectedMissingBg) {
-        assert.strictEqual(level.status, 'error', level.id + ' should exercise the procedural fallback');
+      if (level.id === expectedMissingBg) {
+        assert.strictEqual(level.bgStatus, 'error', level.id + ' should exercise the far-layer fallback');
       } else {
-        assert.strictEqual(level.status, 'ready', level.id + ' background should load');
-        assert.deepStrictEqual([level.width, level.height], [1920, 1080], level.id + ' dimensions');
-        assert.strictEqual(level.parallaxChanged, true, level.id + ' background should parallax with camX');
+        assert.strictEqual(level.bgStatus, 'ready', level.id + ' far background should load');
+        assert.deepStrictEqual(level.bgSize, [1920, 1080], level.id + ' far dimensions');
       }
+      if (level.id === expectedMissingMg) {
+        assert.strictEqual(level.mgStatus, 'error', level.id + ' should exercise the single-layer fallback');
+      } else {
+        assert.strictEqual(level.mgStatus, 'ready', level.id + ' midground should load');
+        assert.deepStrictEqual(level.mgSize, [1920, 1080], level.id + ' midground dimensions');
+      }
+      if (level.id !== expectedMissingBg && level.id !== expectedMissingMg) {
+        assert.strictEqual(level.nearMovesFaster, true, level.id + ' midground should move faster than its far layer');
+      }
+      assert.strictEqual(level.parallaxChanged, true, level.id + ' background should parallax with camX');
     }
 
     let st = await page.evaluate(() => window.GS.game.getState());

@@ -35,7 +35,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 - **Game feel / juice:** screen shake, a brief hit-stop freeze and camera punch on contact, slow-motion on big combos (and a bigger one on the exploding ball), full-screen flashes, a popping combo meter, and dust puffs on landing — tuned so hits feel weighty without being nauseating
 
 ### 6a. V1 Scope
-- 6 levels/scenes, each with its own layout and funny-target set (4 with illustrated backgrounds, 2 newer ranges on the procedural gradient until art is added)
+- 6 levels/scenes, each with its own layout, funny-target set, and layered illustrated background
 - Simple local leaderboard (best score per device, no accounts/backend)
 - Voiced creatures — gibberish/character voice lines reacting to hits/misses
 - Landscape-first (fills the viewport to show more of the course down-range); still playable in portrait with a nudge to rotate
@@ -53,7 +53,7 @@ A mobile-first, web-based, driving-range-style golf game for kids (~10 years old
 ## 8. Platform
 - Web-based, mobile-first responsive design
 - HTML5 / JS Canvas, no build step, no backend
-- Self-contained: bundled illustrated WebP background images with procedural gradient fallbacks; all characters, props, HUD, effects, and Web Audio SFX remain procedural
+- Self-contained: bundled illustrated WebP far and midground layers with procedural gradient fallbacks; all characters, props, HUD, effects, and Web Audio SFX remain procedural
 
 ### 8a. Character Concepts (original — round/blobby direction)
 Keeping clear water between this and existing IP: different silhouette, colour, and feature set, distinct name/lore. The cast is one species/design family with distinct colours and personalities.
