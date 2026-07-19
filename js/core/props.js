@@ -135,6 +135,20 @@
       height: 72,
       sound: 'buzz',
       reaction: 'swarm'
+    },
+    // A defensive obstacle: the catcher/net kicks normal hits back toward the
+    // tee. Knock out the operator to disable it and score.
+    catapult: {
+      label: 'Catapult Crew',
+      points: 300,
+      width: 150,
+      height: 130,
+      sound: 'clatter',
+      reaction: 'disable',
+      catapult: true,
+      fling: 0.82,
+      operator: { x: -54, y: 0, width: 38, height: 78 },
+      catcher: { x: 40, y: 72, width: 72, height: 50 }
     }
   };
 
@@ -170,7 +184,30 @@
     return dx * dx + dy * dy <= radius * radius;
   }
 
-  const api = { PROP_TYPES, getPropType, propPoints, hitsProp };
+
+  function hitsPropRegion(ballX, ballY, radius, prop, region) {
+    const left = prop.x + region.x - region.width / 2;
+    const right = prop.x + region.x + region.width / 2;
+    const bottom = prop.y + region.y;
+    const top = prop.y + region.y + region.height;
+    const cx = Math.max(left, Math.min(ballX, right));
+    const cy = Math.max(bottom, Math.min(ballY, top));
+    const dx = ballX - cx;
+    const dy = ballY - cy;
+    return dx * dx + dy * dy <= radius * radius;
+  }
+
+  function hitsCatapultOperator(ballX, ballY, radius, prop) {
+    const t = PROP_TYPES[prop.type];
+    return !!(t && t.operator && hitsPropRegion(ballX, ballY, radius, prop, t.operator));
+  }
+
+  function hitsCatapultCatcher(ballX, ballY, radius, prop) {
+    const t = PROP_TYPES[prop.type];
+    return !!(t && t.catcher && hitsPropRegion(ballX, ballY, radius, prop, t.catcher));
+  }
+
+  const api = { PROP_TYPES, getPropType, propPoints, hitsProp, hitsCatapultOperator, hitsCatapultCatcher };
 
   global.GS = global.GS || {};
   global.GS.Props = api;

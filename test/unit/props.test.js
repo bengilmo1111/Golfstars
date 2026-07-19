@@ -61,6 +61,20 @@ test('new target types carry their behavior flags', () => {
   const hive = Props.getPropType('beehive');
   assert.strictEqual(hive.reaction, 'swarm');
   assert.ok(hive.points > 0);
+
+  const catapult = Props.getPropType('catapult');
+  assert.strictEqual(catapult.catapult, true);
+  assert.ok(catapult.fling > 0, 'catapult needs fling strength');
+  assert.ok(catapult.operator && catapult.catcher, 'catapult needs operator and catcher regions');
+  assert.ok(catapult.points > 0, 'disabling the catapult scores');
+});
+
+test('catapult has separate scoring operator and fling catcher hit regions', () => {
+  const prop = { type: 'catapult', x: 500, y: 0 };
+  assert.strictEqual(Props.hitsCatapultOperator(446, 40, 16, prop), true, 'operator can be targeted');
+  assert.strictEqual(Props.hitsCatapultOperator(540, 100, 16, prop), false, 'catcher is not the operator');
+  assert.strictEqual(Props.hitsCatapultCatcher(540, 100, 16, prop), true, 'catcher/net can fling shots');
+  assert.strictEqual(Props.hitsCatapultCatcher(446, 40, 16, prop), false, 'operator hit does not count as net hit');
 });
 
 test('a floating balloon is only hit when the ball reaches its height', () => {

@@ -334,8 +334,115 @@
       case 'beehive':
         drawBeehive(ctx, w, h, a, t);
         break;
+      case 'catapult':
+        drawCatapult(ctx, w, h, a, prop, t);
+        break;
     }
     ctx.restore();
+  }
+
+
+  function drawCatapult(ctx, w, h, a, prop, t) {
+    const disabled = prop.hit;
+    const recoil = !disabled && a >= 0 ? Math.max(0, 1 - a * 7) : 0;
+    const wood = '#8a5527';
+    const darkWood = '#5d3518';
+    const rope = '#e0c36b';
+
+    // Sturdy wheeled base.
+    ctx.fillStyle = darkWood;
+    roundedRect(ctx, -w * 0.48, -h * 0.16, w * 0.78, h * 0.13, w * 0.03);
+    ctx.fill();
+    ctx.fillStyle = wood;
+    roundedRect(ctx, -w * 0.42, -h * 0.26, w * 0.65, h * 0.12, w * 0.03);
+    ctx.fill();
+    ctx.fillStyle = '#3b2a1f';
+    for (const wx of [-w * 0.34, w * 0.16]) {
+      ctx.beginPath();
+      ctx.arc(wx, -h * 0.04, w * 0.09, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#c99642';
+      ctx.beginPath();
+      ctx.arc(wx, -h * 0.04, w * 0.035, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#3b2a1f';
+    }
+
+    // Uprights and cross pin.
+    ctx.strokeStyle = wood;
+    ctx.lineWidth = w * 0.06;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.16, -h * 0.18);
+    ctx.lineTo(-w * 0.06, -h * 0.82);
+    ctx.moveTo(w * 0.08, -h * 0.18);
+    ctx.lineTo(-w * 0.02, -h * 0.82);
+    ctx.stroke();
+    ctx.strokeStyle = rope;
+    ctx.lineWidth = w * 0.025;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.18, -h * 0.5);
+    ctx.lineTo(w * 0.12, -h * 0.5);
+    ctx.stroke();
+
+    // Lever to pull/release.
+    ctx.strokeStyle = '#d99a3a';
+    ctx.lineWidth = w * 0.035;
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.34, -h * 0.23);
+    ctx.lineTo(-w * 0.5, -h * (0.48 + recoil * 0.08));
+    ctx.stroke();
+    ctx.fillStyle = '#ff6b4a';
+    ctx.beginPath();
+    ctx.arc(-w * 0.5, -h * (0.48 + recoil * 0.08), w * 0.045, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Throwing arm. When disabled, the arm drops loose and falls off the pivot.
+    ctx.save();
+    if (disabled) {
+      const p = Math.min(1, a / 1.1);
+      ctx.translate(w * 0.06 + p * w * 0.34, -h * 0.72 + p * h * 0.58);
+      ctx.rotate(0.9 + p * 1.7);
+      ctx.globalAlpha = 1 - p * 0.25;
+    } else {
+      ctx.translate(0, -h * 0.7);
+      ctx.rotate(-0.55 - recoil * 0.45);
+    }
+    ctx.strokeStyle = wood;
+    ctx.lineWidth = w * 0.055;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.moveTo(-w * 0.2, 0);
+    ctx.lineTo(w * 0.42, 0);
+    ctx.stroke();
+    // Net/catcher at the high end.
+    ctx.fillStyle = 'rgba(80,55,30,0.18)';
+    ctx.strokeStyle = '#3b2a1f';
+    ctx.lineWidth = w * 0.025;
+    ctx.beginPath();
+    ctx.ellipse(w * 0.46, 0, w * 0.14, h * 0.13, -0.2, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.strokeStyle = rope;
+    ctx.lineWidth = w * 0.012;
+    for (let i = -2; i <= 2; i++) {
+      ctx.beginPath();
+      ctx.moveTo(w * 0.35, i * h * 0.035);
+      ctx.lineTo(w * 0.56, -i * h * 0.035);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Operator creature standing by the lever; he disappears in a dizzy pop when hit.
+    const opX = -w * 0.36;
+    if (!disabled) {
+      drawCreature(ctx, opX, 0, h * 0.15, { body: '#f0b35b', belly: '#ffe4b5', arm: t * 5, look: recoil ? 1 : 0 });
+    } else {
+      const p = Math.min(1, a / 1);
+      ctx.globalAlpha = 1 - p * 0.65;
+      drawCreature(ctx, opX - p * w * 0.12, -p * h * 0.25, h * 0.15, { body: '#f0b35b', belly: '#ffe4b5', rot: -p * 5, squash: 0.2 });
+      ctx.globalAlpha = 1;
+    }
   }
 
   function drawCartCreature(ctx, w, h, a, prop) {
